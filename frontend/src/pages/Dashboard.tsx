@@ -2,6 +2,132 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { pentestApi, Pentest, CreatePentestRequest } from '../services/api';
 
+// Компонент для отображения отдельного пентеста
+function PentestItem({
+  pentest,
+  expanded,
+  onToggleExpand,
+  onStart,
+  onStop,
+  onDelete,
+  startPending,
+  stopPending,
+  deletePending,
+  getStatusColor,
+  getStatusText,
+}: {
+  pentest: Pentest;
+  expanded: boolean;
+  onToggleExpand: () => void;
+  onStart: () => void;
+  onStop: () => void;
+  onDelete: () => void;
+  startPending: boolean;
+  stopPending: boolean;
+  deletePending: boolean;
+  getStatusColor: (status: Pentest['status']) => string;
+  getStatusText: (status: Pentest['status']) => string;
+}) {
+  const { data: logs = [] } = useQuery({
+    queryKey: ['pentest-logs', pentest.id],
+    queryFn: () => pentestApi.getLogs(pentest.id).then(res => res.data),
+    enabled: expanded,
+    refetchInterval: expanded ? 1000 : false,
+  });
+
+  const getLogColor = (level: string) => {
+    switch (level) {
+      case 'error': return 'text-red-600';
+      case 'warn': return 'text-yellow-600';
+      case 'success': return 'text-green-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  return (
+    <div className="p-6 hover:bg-gray-50">
+      <div className="flex justify-between items-start">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <h3 className="text-xl font-semibold text-gray-900">
+              {pentest.name}
+            </h3>
+            <span
+              className={`px-3 py-1 rounded-full text-white text-sm font-medium ${getStatusColor(pentest.status)}`}
+            >
+              {getStatusText(pentest.status)}
+            </span>
+          </div>
+          <p className="text-gray-600 mb-2">
+            <span className="font-medium">Цель:</span> {pentest.targetUrl}
+          </p>
+          <p className="text-sm text-gray-500">
+            Создан: {new Date(pentest.createdAt).toLocaleString('ru-RU')}
+            {pentest.startedAt && (
+              <> • Запущен: {new Date(pentest.startedAt).toLocaleString('ru-RU')}</>
+            )}
+          </p>
+        </div>
+        <div className="flex gap-2 ml-4">
+          {pentest.status === 'pending' && (
+            <button
+              onClick={onStart}
+              disabled={startPending}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+            >
+              Запустить
+            </button>
+          )}
+          {pentest.status === 'running' && (
+            <button
+              onClick={onStop}
+              disabled={stopPending}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+            >
+              Остановить
+            </button>
+          )}
+          <button
+            onClick={onToggleExpand}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+          >
+            {expanded ? 'Скрыть логи' : 'Показать логи'}
+          </button>
+          <button
+            onClick={onDelete}
+            disabled={deletePending}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+          >
+            Удалить
+          </button>
+        </div>
+      </div>
+      {expanded && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <h4 className="text-lg font-semibold mb-3">Логи пентеста:</h4>
+          {logs.length === 0 ? (
+            <p className="text-gray-500 text-sm">Логи отсутствуют</p>
+          ) : (
+            <div className="bg-gray-900 text-gray-100 p-4 rounded-lg max-h-96 overflow-y-auto font-mono text-sm">
+              {logs.map((log: any) => (
+                <div key={log.id} className={`mb-1 ${getLogColor(log.level)}`}>
+                  <span className="text-gray-400 text-xs mr-2">
+                    {new Date(log.timestamp).toLocaleTimeString('ru-RU')}
+                  </span>
+                  <span className={`font-medium ${getLogColor(log.level)}`}>
+                    [{log.level.toUpperCase()}]
+                  </span>
+                  <span className="ml-2">{log.message}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState({ name: '', targetUrl: '' });
@@ -143,110 +269,26 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {pentests.map((pentest) => {
-                const { data: logs = [] } = useQuery({
-                  queryKey: ['pentest-logs', pentest.id],
-                  queryFn: () => pentestApi.getLogs(pentest.id).then(res => res.data),
-                  enabled: expandedPentestId === pentest.id,
-                  refetchInterval: expandedPentestId === pentest.id ? 1000 : false,
-                });
-
-                const getLogColor = (level: string) => {
-                  switch (level) {
-                    case 'error': return 'text-red-600';
-                    case 'warn': return 'text-yellow-600';
-                    case 'success': return 'text-green-600';
-                    default: return 'text-gray-600';
-                  }
-                };
-
-                return (
-                  <div key={pentest.id} className="p-6 hover:bg-gray-50">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-xl font-semibold text-gray-900">
-                            {pentest.name}
-                          </h3>
-                          <span
-                            className={`px-3 py-1 rounded-full text-white text-sm font-medium ${getStatusColor(pentest.status)}`}
-                          >
-                            {getStatusText(pentest.status)}
-                          </span>
-                        </div>
-                        <p className="text-gray-600 mb-2">
-                          <span className="font-medium">Цель:</span> {pentest.targetUrl}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Создан: {new Date(pentest.createdAt).toLocaleString('ru-RU')}
-                          {pentest.startedAt && (
-                            <> • Запущен: {new Date(pentest.startedAt).toLocaleString('ru-RU')}</>
-                          )}
-                        </p>
-                      </div>
-                      <div className="flex gap-2 ml-4">
-                        {pentest.status === 'pending' && (
-                          <button
-                            onClick={() => startMutation.mutate(pentest.id)}
-                            disabled={startMutation.isPending}
-                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
-                          >
-                            Запустить
-                          </button>
-                        )}
-                        {pentest.status === 'running' && (
-                          <button
-                            onClick={() => stopMutation.mutate(pentest.id)}
-                            disabled={stopMutation.isPending}
-                            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
-                          >
-                            Остановить
-                          </button>
-                        )}
-                        <button
-                          onClick={() => setExpandedPentestId(expandedPentestId === pentest.id ? null : pentest.id)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-                        >
-                          {expandedPentestId === pentest.id ? 'Скрыть логи' : 'Показать логи'}
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm('Удалить этот пентест?')) {
-                              deleteMutation.mutate(pentest.id);
-                            }
-                          }}
-                          disabled={deleteMutation.isPending}
-                          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
-                        >
-                          Удалить
-                        </button>
-                      </div>
-                    </div>
-                    {expandedPentestId === pentest.id && (
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        <h4 className="text-lg font-semibold mb-3">Логи пентеста:</h4>
-                        {logs.length === 0 ? (
-                          <p className="text-gray-500 text-sm">Логи отсутствуют</p>
-                        ) : (
-                          <div className="bg-gray-900 text-gray-100 p-4 rounded-lg max-h-96 overflow-y-auto font-mono text-sm">
-                            {logs.map((log: any) => (
-                              <div key={log.id} className={`mb-1 ${getLogColor(log.level)}`}>
-                                <span className="text-gray-400 text-xs mr-2">
-                                  {new Date(log.timestamp).toLocaleTimeString('ru-RU')}
-                                </span>
-                                <span className={`font-medium ${getLogColor(log.level)}`}>
-                                  [{log.level.toUpperCase()}]
-                                </span>
-                                <span className="ml-2">{log.message}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {pentests.map((pentest) => (
+                <PentestItem
+                  key={pentest.id}
+                  pentest={pentest}
+                  expanded={expandedPentestId === pentest.id}
+                  onToggleExpand={() => setExpandedPentestId(expandedPentestId === pentest.id ? null : pentest.id)}
+                  onStart={() => startMutation.mutate(pentest.id)}
+                  onStop={() => stopMutation.mutate(pentest.id)}
+                  onDelete={() => {
+                    if (confirm('Удалить этот пентест?')) {
+                      deleteMutation.mutate(pentest.id);
+                    }
+                  }}
+                  startPending={startMutation.isPending}
+                  stopPending={stopMutation.isPending}
+                  deletePending={deleteMutation.isPending}
+                  getStatusColor={getStatusColor}
+                  getStatusText={getStatusText}
+                />
+              ))}
             </div>
           )}
         </div>
