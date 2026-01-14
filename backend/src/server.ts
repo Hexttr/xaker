@@ -35,15 +35,9 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 console.log('📦 Загрузка routes...');
-try {
-  const pentestRoutes = require('./routes/pentest.routes').default;
-  app.use('/api/pentests', pentestRoutes);
-  console.log('✅ Routes загружены успешно');
-} catch (error: any) {
-  console.error('❌ Ошибка при загрузке routes:', error);
-  console.error('Stack:', error.stack);
-  process.exit(1);
-}
+import pentestRoutes from './routes/pentest.routes';
+app.use('/api/pentests', pentestRoutes);
+console.log('✅ Routes загружены успешно');
 
 // WebSocket connection
 io.on('connection', (socket) => {
