@@ -26,6 +26,10 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// API Routes
+import pentestRoutes from './routes/pentest.routes';
+app.use('/api/pentests', pentestRoutes);
+
 // WebSocket connection
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
