@@ -1,18 +1,24 @@
 import { Pentest, PentestLog } from '../types/pentest';
 import { pentestService } from './pentest.service';
 import { EventEmitter } from 'events';
+import { spawn, ChildProcess } from 'child_process';
+import { join, resolve } from 'path';
+import { existsSync } from 'fs';
 
 /**
  * Сервис для интеграции с Shannon
- * 
- * Пока это заглушка. Нужно будет:
- * 1. Изучить как запускается Shannon
- * 2. Создать процесс для запуска Shannon
- * 3. Перехватывать логи и события
- * 4. Парсить результаты
  */
 class ShannonService extends EventEmitter {
-  private runningPentests: Map<string, any> = new Map();
+  private runningPentests: Map<string, ChildProcess> = new Map();
+  private readonly SHANNON_PATH = resolve(process.cwd(), '../shannon');
+  private readonly SHANNON_DIST_PATH = join(this.SHANNON_PATH, 'dist', 'shannon.js');
+
+  /**
+   * Проверить, доступен ли Shannon
+   */
+  isShannonAvailable(): boolean {
+    return existsSync(this.SHANNON_DIST_PATH);
+  }
 
   /**
    * Запустить пентест через Shannon
@@ -27,15 +33,21 @@ class ShannonService extends EventEmitter {
       throw new Error('Пентест уже запущен');
     }
 
+    // Проверяем доступность Shannon
+    if (!this.isShannonAvailable()) {
+      pentestService.addLog(pentestId, 'error', '❌ Shannon не найден. Убедитесь, что он клонирован в ../shannon');
+      pentestService.updatePentestStatus(pentestId, 'failed');
+      throw new Error('Shannon не доступен. Клонируйте репозиторий: git clone https://github.com/KeygraphHQ/shannon.git');
+    }
+
     pentestService.updatePentestStatus(pentestId, 'running');
-    this.runningPentests.set(pentestId, { startTime: Date.now() });
+    this.runningPentests.set(pentestId, null as any); // Placeholder
 
     try {
-      // TODO: Здесь будет реальный вызов Shannon
       await this.executeShannon(pentestId, config);
-    } catch (error) {
+    } catch (error: any) {
       pentestService.updatePentestStatus(pentestId, 'failed');
-      pentestService.addLog(pentestId, 'error', `Ошибка: ${error}`);
+      pentestService.addLog(pentestId, 'error', `Ошибка: ${error.message || error}`);
       throw error;
     }
   }
@@ -46,7 +58,7 @@ class ShannonService extends EventEmitter {
   async stopPentest(pentestId: string): Promise<void> {
     const process = this.runningPentests.get(pentestId);
     if (process) {
-      // TODO: Остановить процесс Shannon
+      process.kill('SIGTERM');
       this.runningPentests.delete(pentestId);
       pentestService.updatePentestStatus(pentestId, 'stopped');
       pentestService.addLog(pentestId, 'info', 'Пентест остановлен пользователем');
@@ -54,34 +66,125 @@ class ShannonService extends EventEmitter {
   }
 
   /**
-   * Выполнить Shannon (заглушка)
+   * Выполнить Shannon
    */
   private async executeShannon(pentestId: string, config: Pentest['config']): Promise<void> {
-    pentestService.addLog(pentestId, 'info', '🚀 Начинается пентест...');
+    pentestService.addLog(pentestId, 'info', '🚀 Начинается пентест через Shannon...');
     pentestService.addLog(pentestId, 'info', `🎯 Цель: ${config.targetUrl}`);
 
-    // Фаза 1: Reconnaissance
+    // Для работы Shannon нужен путь к репозиторию
+    // Если не указан, используем временный путь или создаем заглушку
+    const repoPath = config.scope?.[0] || join(process.cwd(), 'temp-repo');
+    
+    // Проверяем наличие ANTHROPIC_API_KEY
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      pentestService.addLog(pentestId, 'warn', '⚠️ ANTHROPIC_API_KEY не установлен. Установите его в .env файле');
+      pentestService.addLog(pentestId, 'info', 'Продолжаю с симуляцией...');
+      // Fallback на симуляцию если нет API ключа
+      await this.simulatePentest(pentestId);
+      return;
+    }
+
+    // Собираем аргументы для Shannon
+    const args = [
+      config.targetUrl,
+      repoPath,
+    ];
+
+    // Опциональный конфиг
+    if (config.excludedPaths && config.excludedPaths.length > 0) {
+      // Можно создать временный конфиг файл
+      args.push('--config', this.createTempConfig(pentestId, config));
+    }
+
+    pentestService.addLog(pentestId, 'info', `📦 Запускаю Shannon: node ${this.SHANNON_DIST_PATH} ${args.join(' ')}`);
+
+    // Запускаем Shannon как дочерний процесс
+    const shannonProcess = spawn('node', [this.SHANNON_DIST_PATH, ...args], {
+      cwd: this.SHANNON_PATH,
+      env: {
+        ...process.env,
+        ANTHROPIC_API_KEY: apiKey,
+        CLAUDE_CODE_MAX_OUTPUT_TOKENS: '64000',
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    this.runningPentests.set(pentestId, shannonProcess);
+
+    // Перехватываем stdout (логи)
+    shannonProcess.stdout.on('data', (data: Buffer) => {
+      const lines = data.toString().split('\n').filter(line => line.trim());
+      lines.forEach(line => {
+        pentestService.addLog(pentestId, 'info', line);
+      });
+    });
+
+    // Перехватываем stderr (ошибки)
+    shannonProcess.stderr.on('data', (data: Buffer) => {
+      const lines = data.toString().split('\n').filter(line => line.trim());
+      lines.forEach(line => {
+        pentestService.addLog(pentestId, 'error', line);
+      });
+    });
+
+    // Обработка завершения
+    return new Promise((resolve, reject) => {
+      shannonProcess.on('close', (code) => {
+        this.runningPentests.delete(pentestId);
+        
+        if (code === 0) {
+          pentestService.updatePentestStatus(pentestId, 'completed');
+          pentestService.addLog(pentestId, 'success', '✅ Пентест успешно завершен!');
+          resolve();
+        } else {
+          pentestService.updatePentestStatus(pentestId, 'failed');
+          pentestService.addLog(pentestId, 'error', `❌ Пентест завершился с кодом ${code}`);
+          reject(new Error(`Shannon завершился с кодом ${code}`));
+        }
+      });
+
+      shannonProcess.on('error', (error) => {
+        this.runningPentests.delete(pentestId);
+        pentestService.updatePentestStatus(pentestId, 'failed');
+        pentestService.addLog(pentestId, 'error', `❌ Ошибка запуска Shannon: ${error.message}`);
+        reject(error);
+      });
+    });
+  }
+
+  /**
+   * Создать временный конфиг файл
+   */
+  private createTempConfig(pentestId: string, config: Pentest['config']): string {
+    // TODO: Создать временный YAML конфиг файл
+    // Пока возвращаем пустую строку
+    return '';
+  }
+
+  /**
+   * Симуляция пентеста (fallback если нет API ключа или Shannon)
+   */
+  private async simulatePentest(pentestId: string): Promise<void> {
     pentestService.addLog(pentestId, 'info', '📡 Фаза 1: Разведка (Reconnaissance)...');
     await this.simulatePhase(pentestId, 'reconnaissance', 5000);
 
-    // Фаза 2: Vulnerability Analysis
     pentestService.addLog(pentestId, 'info', '🔍 Фаза 2: Анализ уязвимостей (Vulnerability Analysis)...');
     await this.simulatePhase(pentestId, 'vulnerability', 8000);
 
-    // Фаза 3: Exploitation
     pentestService.addLog(pentestId, 'info', '⚡ Фаза 3: Эксплуатация (Exploitation)...');
     await this.simulatePhase(pentestId, 'exploitation', 10000);
 
-    // Фаза 4: Reporting
     pentestService.addLog(pentestId, 'info', '📝 Фаза 4: Генерация отчета (Reporting)...');
     await this.simulatePhase(pentestId, 'reporting', 3000);
 
     pentestService.updatePentestStatus(pentestId, 'completed');
-    pentestService.addLog(pentestId, 'success', '✅ Пентест успешно завершен!');
+    pentestService.addLog(pentestId, 'success', '✅ Пентест успешно завершен! (симуляция)');
   }
 
   /**
-   * Симуляция фазы (временная заглушка)
+   * Симуляция фазы
    */
   private async simulatePhase(pentestId: string, phase: string, duration: number): Promise<void> {
     const steps = [
@@ -99,4 +202,3 @@ class ShannonService extends EventEmitter {
 }
 
 export const shannonService = new ShannonService();
-
