@@ -36,10 +36,11 @@ io.on('connection', (socket) => {
 });
 
 // Start server
-httpServer.listen(Number(PORT), () => {
+httpServer.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`🚀 Backend server running on http://localhost:${PORT}`);
   console.log(`📡 WebSocket server ready`);
   console.log(`✅ Server is listening on port ${PORT}`);
+  console.log(`🌐 Accessible on: http://localhost:${PORT} and http://127.0.0.1:${PORT}`);
 });
 
 // Error handling
