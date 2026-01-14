@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { pentestApi, Pentest, CreatePentestRequest } from '../services/api';
 import LogViewer from '../components/LogViewer';
+import StatusBar from '../components/StatusBar';
 
 // Компонент для отображения отдельного пентеста
 function PentestItem({
