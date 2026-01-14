@@ -34,6 +34,13 @@ export interface CreatePentestRequest {
   };
 }
 
+export interface Vulnerability {
+  type: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  title: string;
+  location?: string;
+}
+
 export const pentestApi = {
   getAll: () => api.get<Pentest[]>('/pentests'),
   getById: (id: string) => api.get<Pentest>(`/pentests/${id}`),
@@ -43,6 +50,7 @@ export const pentestApi = {
   delete: (id: string) => api.delete(`/pentests/${id}`),
   getLogs: (id: string) => api.get(`/pentests/${id}/logs`),
   getStatus: (id: string) => api.get<{ status: string }>(`/pentests/${id}/status`),
+  getVulnerabilities: (id: string) => api.get<Vulnerability[]>(`/pentests/${id}/vulnerabilities`),
 };
 
 export default api;
