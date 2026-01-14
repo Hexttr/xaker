@@ -42,6 +42,7 @@ export const pentestApi = {
   stop: (id: string) => api.post(`/pentests/${id}/stop`),
   delete: (id: string) => api.delete(`/pentests/${id}`),
   getLogs: (id: string) => api.get(`/pentests/${id}/logs`),
+  getStatus: (id: string) => api.get<{ status: string }>(`/pentests/${id}/status`),
 };
 
 export default api;
