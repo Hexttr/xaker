@@ -36,15 +36,6 @@ function PentestItem({
     refetchInterval: expanded ? 1000 : false,
   });
 
-  const getLogColor = (level: string) => {
-    switch (level) {
-      case 'error': return 'text-red-600';
-      case 'warn': return 'text-yellow-600';
-      case 'success': return 'text-green-600';
-      default: return 'text-gray-600';
-    }
-  };
-
   return (
     <div className="p-6 hover:bg-gray-50">
       <div className="flex justify-between items-start">
