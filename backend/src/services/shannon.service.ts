@@ -12,6 +12,7 @@ class ShannonService extends EventEmitter {
   private runningPentests: Map<string, ChildProcess> = new Map();
   private readonly SHANNON_PATH = resolve(process.cwd(), '../shannon');
   private readonly SHANNON_DIST_PATH = join(this.SHANNON_PATH, 'dist', 'shannon.js');
+  private readonly USE_SIMULATION = process.env.USE_SIMULATION === 'true';
 
   /**
    * Проверить, доступен ли Shannon
@@ -33,11 +34,31 @@ class ShannonService extends EventEmitter {
       throw new Error('Пентест уже запущен');
     }
 
+    // Режим симуляции (для тестирования без затрат)
+    if (this.USE_SIMULATION) {
+      pentestService.updatePentestStatus(pentestId, 'running');
+      pentestService.addLog(pentestId, 'info', '🧪 РЕЖИМ СИМУЛЯЦИИ (USE_SIMULATION=true)');
+      pentestService.addLog(pentestId, 'info', '💰 Реальные затраты на API отключены');
+      await this.simulatePentest(pentestId, config);
+      return;
+    }
+
     // Проверяем доступность Shannon
     if (!this.isShannonAvailable()) {
       pentestService.addLog(pentestId, 'error', '❌ Shannon не найден. Убедитесь, что он клонирован в ../shannon');
-      pentestService.updatePentestStatus(pentestId, 'failed');
-      throw new Error('Shannon не доступен. Клонируйте репозиторий: git clone https://github.com/KeygraphHQ/shannon.git');
+      pentestService.addLog(pentestId, 'info', 'Переключаюсь на симуляцию...');
+      await this.simulatePentest(pentestId, config);
+      return;
+    }
+
+    // Проверяем наличие ANTHROPIC_API_KEY
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey || apiKey === 'your_api_key_here') {
+      pentestService.addLog(pentestId, 'warn', '⚠️ ANTHROPIC_API_KEY не установлен или неверный');
+      pentestService.addLog(pentestId, 'info', '💰 Переключаюсь на симуляцию (без затрат)');
+      pentestService.addLog(pentestId, 'info', 'Для реального запуска установите валидный API ключ');
+      await this.simulatePentest(pentestId, config);
+      return;
     }
 
     pentestService.updatePentestStatus(pentestId, 'running');
@@ -69,22 +90,15 @@ class ShannonService extends EventEmitter {
    * Выполнить Shannon
    */
   private async executeShannon(pentestId: string, config: Pentest['config']): Promise<void> {
-    pentestService.addLog(pentestId, 'info', '🚀 Начинается пентест через Shannon...');
+    pentestService.addLog(pentestId, 'info', '🚀 Начинается РЕАЛЬНЫЙ пентест через Shannon...');
     pentestService.addLog(pentestId, 'info', `🎯 Цель: ${config.targetUrl}`);
+    pentestService.addLog(pentestId, 'warn', '💰 ВНИМАНИЕ: Используется реальный Claude API (~$50)');
 
     // Для работы Shannon нужен путь к репозиторию
     // Если не указан, используем временный путь или создаем заглушку
     const repoPath = config.scope?.[0] || join(process.cwd(), 'temp-repo');
     
-    // Проверяем наличие ANTHROPIC_API_KEY
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      pentestService.addLog(pentestId, 'warn', '⚠️ ANTHROPIC_API_KEY не установлен. Установите его в .env файле');
-      pentestService.addLog(pentestId, 'info', 'Продолжаю с симуляцией...');
-      // Fallback на симуляцию если нет API ключа
-      await this.simulatePentest(pentestId);
-      return;
-    }
+    const apiKey = process.env.ANTHROPIC_API_KEY!;
 
     // Собираем аргументы для Shannon
     const args = [
@@ -164,23 +178,27 @@ class ShannonService extends EventEmitter {
   }
 
   /**
-   * Симуляция пентеста (fallback если нет API ключа или Shannon)
+   * Симуляция пентеста (без затрат)
    */
-  private async simulatePentest(pentestId: string): Promise<void> {
+  private async simulatePentest(pentestId: string, config: Pentest['config']): Promise<void> {
+    pentestService.addLog(pentestId, 'info', '🧪 РЕЖИМ СИМУЛЯЦИИ - Реальные затраты отключены');
+    pentestService.addLog(pentestId, 'info', `🎯 Цель: ${config.targetUrl}`);
+    
     pentestService.addLog(pentestId, 'info', '📡 Фаза 1: Разведка (Reconnaissance)...');
-    await this.simulatePhase(pentestId, 'reconnaissance', 5000);
+    await this.simulatePhase(pentestId, 'reconnaissance', 3000);
 
     pentestService.addLog(pentestId, 'info', '🔍 Фаза 2: Анализ уязвимостей (Vulnerability Analysis)...');
-    await this.simulatePhase(pentestId, 'vulnerability', 8000);
+    await this.simulatePhase(pentestId, 'vulnerability', 4000);
 
     pentestService.addLog(pentestId, 'info', '⚡ Фаза 3: Эксплуатация (Exploitation)...');
-    await this.simulatePhase(pentestId, 'exploitation', 10000);
+    await this.simulatePhase(pentestId, 'exploitation', 5000);
 
     pentestService.addLog(pentestId, 'info', '📝 Фаза 4: Генерация отчета (Reporting)...');
-    await this.simulatePhase(pentestId, 'reporting', 3000);
+    await this.simulatePhase(pentestId, 'reporting', 2000);
 
     pentestService.updatePentestStatus(pentestId, 'completed');
     pentestService.addLog(pentestId, 'success', '✅ Пентест успешно завершен! (симуляция)');
+    pentestService.addLog(pentestId, 'info', '💰 Для реального выполнения установите валидный API ключ и убедитесь, что USE_SIMULATION=false');
   }
 
   /**
