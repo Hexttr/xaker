@@ -125,13 +125,32 @@ class ShannonService extends EventEmitter {
     pentestService.addLog(pentestId, 'info', `📦 Запускаю Shannon: node ${this.SHANNON_DIST_PATH} ${args.join(' ')}`);
 
     // Запускаем Shannon как дочерний процесс
+    // Настраиваем переменные окружения для прокси (если VPN используется)
+    const env = {
+      ...process.env,
+      ANTHROPIC_API_KEY: apiKey,
+      CLAUDE_CODE_MAX_OUTPUT_TOKENS: '64000',
+    };
+    
+    // Если есть системные переменные прокси, используем их
+    if (process.env.HTTP_PROXY) {
+      env.HTTP_PROXY = process.env.HTTP_PROXY;
+      pentestService.addLog(pentestId, 'info', `🌐 Используется HTTP прокси: ${process.env.HTTP_PROXY}`);
+    }
+    if (process.env.HTTPS_PROXY) {
+      env.HTTPS_PROXY = process.env.HTTPS_PROXY;
+      pentestService.addLog(pentestId, 'info', `🌐 Используется HTTPS прокси: ${process.env.HTTPS_PROXY}`);
+    }
+    if (process.env.http_proxy) {
+      env.http_proxy = process.env.http_proxy;
+    }
+    if (process.env.https_proxy) {
+      env.https_proxy = process.env.https_proxy;
+    }
+    
     const shannonProcess = spawn('node', [this.SHANNON_DIST_PATH, ...args], {
       cwd: this.SHANNON_PATH,
-      env: {
-        ...process.env,
-        ANTHROPIC_API_KEY: apiKey,
-        CLAUDE_CODE_MAX_OUTPUT_TOKENS: '64000',
-      },
+      env: env,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
