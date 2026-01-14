@@ -3,7 +3,7 @@ import { pentestService } from './pentest.service';
 import { EventEmitter } from 'events';
 import { spawn, ChildProcess } from 'child_process';
 import { join, resolve } from 'path';
-import { existsSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
 
 /**
  * Сервис для интеграции с Shannon
