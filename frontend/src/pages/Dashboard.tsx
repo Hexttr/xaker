@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { pentestApi, Pentest, CreatePentestRequest } from '../services/api';
+import LogViewer from '../components/LogViewer';
 
 // Компонент для отображения отдельного пентеста
 function PentestItem({
@@ -104,24 +105,7 @@ function PentestItem({
       </div>
       {expanded && (
         <div className="mt-4 pt-4 border-t border-gray-200">
-          <h4 className="text-lg font-semibold mb-3">Логи пентеста:</h4>
-          {logs.length === 0 ? (
-            <p className="text-gray-500 text-sm">Логи отсутствуют</p>
-          ) : (
-            <div className="bg-gray-900 text-gray-100 p-4 rounded-lg max-h-96 overflow-y-auto font-mono text-sm">
-              {logs.map((log: any) => (
-                <div key={log.id} className={`mb-1 ${getLogColor(log.level)}`}>
-                  <span className="text-gray-400 text-xs mr-2">
-                    {new Date(log.timestamp).toLocaleTimeString('ru-RU')}
-                  </span>
-                  <span className={`font-medium ${getLogColor(log.level)}`}>
-                    [{log.level.toUpperCase()}]
-                  </span>
-                  <span className="ml-2">{log.message}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <LogViewer logs={logs} autoScroll={true} maxHeight="24rem" />
         </div>
       )}
     </div>
