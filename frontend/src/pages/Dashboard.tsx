@@ -37,35 +37,40 @@ function PentestItem({
   });
 
   return (
-    <div className="p-6 hover:bg-gray-50">
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-xl font-semibold text-gray-900">
+    <div className="p-4 md:p-6 hover:bg-gray-50 transition-colors duration-200">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
+            <h3 className="text-lg md:text-xl font-semibold text-gray-900 break-words">
               {pentest.name}
             </h3>
             <span
-              className={`px-3 py-1 rounded-full text-white text-sm font-medium ${getStatusColor(pentest.status)}`}
+              className={`px-2 md:px-3 py-1 rounded-full text-white text-xs md:text-sm font-medium whitespace-nowrap ${getStatusColor(pentest.status)}`}
             >
               {getStatusText(pentest.status)}
             </span>
           </div>
-          <p className="text-gray-600 mb-2">
-            <span className="font-medium">Цель:</span> {pentest.targetUrl}
+          <p className="text-gray-600 mb-2 break-words">
+            <span className="font-medium">Цель:</span> 
+            <span className="ml-1 font-mono text-xs md:text-sm break-all">{pentest.targetUrl}</span>
           </p>
-          <p className="text-sm text-gray-500">
-            Создан: {new Date(pentest.createdAt).toLocaleString('ru-RU')}
+          <div className="flex flex-wrap gap-2 md:gap-3 text-xs md:text-sm text-gray-500">
+            <span>
+              📅 Создан: {new Date(pentest.createdAt).toLocaleString('ru-RU')}
+            </span>
             {pentest.startedAt && (
-              <> • Запущен: {new Date(pentest.startedAt).toLocaleString('ru-RU')}</>
+              <span>
+                🚀 Запущен: {new Date(pentest.startedAt).toLocaleString('ru-RU')}
+              </span>
             )}
-          </p>
+          </div>
         </div>
-        <div className="flex gap-2 ml-4">
+        <div className="flex flex-wrap gap-2 lg:ml-4 lg:flex-nowrap">
           {pentest.status === 'pending' && (
             <button
               onClick={onStart}
               disabled={startPending}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors duration-200 flex items-center gap-2"
+              className="bg-green-600 hover:bg-green-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 flex-1 md:flex-initial"
             >
               ▶️ Запустить
             </button>
@@ -74,14 +79,14 @@ function PentestItem({
             <button
               onClick={onStop}
               disabled={stopPending}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors duration-200 flex items-center gap-2 animate-pulse"
+              className="bg-red-600 hover:bg-red-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 animate-pulse flex-1 md:flex-initial"
             >
               ⏹️ Остановить
             </button>
           )}
           <button
             onClick={onToggleExpand}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors duration-200 flex items-center justify-center gap-2 flex-1 md:flex-initial"
           >
             {expanded ? (
               <>📋 Скрыть логи</>
@@ -92,7 +97,7 @@ function PentestItem({
           <button
             onClick={onDelete}
             disabled={deletePending}
-            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors duration-200"
+            className="bg-gray-600 hover:bg-gray-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium disabled:opacity-50 transition-colors duration-200 flex-1 md:flex-initial"
           >
             🗑️ Удалить
           </button>
@@ -180,18 +185,25 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900">
-            Pentest.red
-            <span className="text-2xl text-gray-600 font-normal ml-3">
-              AI Penetration Tester
-            </span>
-          </h1>
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 md:mb-8">
+          <div>
+            <h1 className="text-2xl md:text-4xl font-bold text-gray-900">
+              <span className="bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent">
+                Pentest.red
+              </span>
+              <span className="text-lg md:text-2xl text-gray-600 font-normal ml-2 md:ml-3 hidden sm:inline">
+                AI Penetration Tester
+              </span>
+            </h1>
+            <p className="text-gray-500 text-sm mt-1 hidden md:block">
+              Автономный AI пентестер с веб-интерфейсом
+            </p>
+          </div>
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-6 py-2 rounded-lg font-semibold transition-colors duration-200 w-full md:w-auto"
           >
             {showCreateForm ? 'Отмена' : '+ Новый пентест'}
           </button>
