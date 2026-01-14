@@ -95,8 +95,18 @@ class ShannonService extends EventEmitter {
     pentestService.addLog(pentestId, 'warn', '💰 ВНИМАНИЕ: Используется реальный Claude API (~$50)');
 
     // Для работы Shannon нужен путь к репозиторию
-    // Если не указан, используем временный путь или создаем заглушку
-    const repoPath = config.scope?.[0] || join(process.cwd(), 'temp-repo');
+    // Если не указан, создаем временный репозиторий
+    const tempRepoPath = join(process.cwd(), 'temp-repo');
+    const repoPath = config.scope?.[0] || tempRepoPath;
+    
+    // Создаем временный репозиторий, если его нет
+    if (repoPath === tempRepoPath && !existsSync(repoPath)) {
+      pentestService.addLog(pentestId, 'info', `📁 Создаю временный репозиторий: ${tempRepoPath}`);
+      mkdirSync(tempRepoPath, { recursive: true });
+      // Создаем минимальный .git репозиторий для Shannon
+      mkdirSync(join(tempRepoPath, '.git'), { recursive: true });
+      pentestService.addLog(pentestId, 'info', '✅ Временный репозиторий создан');
+    }
     
     const apiKey = process.env.ANTHROPIC_API_KEY!;
 
