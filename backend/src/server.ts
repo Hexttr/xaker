@@ -18,8 +18,15 @@ const io = new Server(httpServer, {
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+console.log('🔧 Настройка middleware...');
 app.use(cors());
 app.use(express.json());
+
+// Логирование всех запросов
+app.use((req, res, next) => {
+  console.log(`📥 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+  next();
+});
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -27,8 +34,16 @@ app.get('/api/health', (req, res) => {
 });
 
 // API Routes
-import pentestRoutes from './routes/pentest.routes';
-app.use('/api/pentests', pentestRoutes);
+console.log('📦 Загрузка routes...');
+try {
+  const pentestRoutes = require('./routes/pentest.routes').default;
+  app.use('/api/pentests', pentestRoutes);
+  console.log('✅ Routes загружены успешно');
+} catch (error: any) {
+  console.error('❌ Ошибка при загрузке routes:', error);
+  console.error('Stack:', error.stack);
+  process.exit(1);
+}
 
 // WebSocket connection
 io.on('connection', (socket) => {
@@ -40,11 +55,15 @@ io.on('connection', (socket) => {
 });
 
 // Start server
+console.log('🚀 Запуск сервера...');
 httpServer.listen(Number(PORT), '0.0.0.0', () => {
-  console.log(`🚀 Backend server running on http://localhost:${PORT}`);
+  console.log(`✅ Backend server running on http://localhost:${PORT}`);
   console.log(`📡 WebSocket server ready`);
-  console.log(`✅ Server is listening on port ${PORT}`);
   console.log(`🌐 Accessible on: http://localhost:${PORT} and http://127.0.0.1:${PORT}`);
+  console.log(`📋 Endpoints:`);
+  console.log(`   - GET  /api/health`);
+  console.log(`   - GET  /api/pentests`);
+  console.log(`   - POST /api/pentests`);
 });
 
 // Error handling
