@@ -195,7 +195,7 @@ export default function Dashboard() {
               </span>
             </h1>
             <p className="text-gray-500 text-sm mt-1 hidden md:block">
-              AI пентестер на каждый день
+              AI пентестер
             </p>
           </div>
           <button
