@@ -126,7 +126,7 @@ class ShannonService extends EventEmitter {
 
     // Запускаем Shannon как дочерний процесс
     // Настраиваем переменные окружения для прокси (если VPN используется)
-    const env = {
+    const env: NodeJS.ProcessEnv = {
       ...process.env,
       ANTHROPIC_API_KEY: apiKey,
       CLAUDE_CODE_MAX_OUTPUT_TOKENS: '64000',
@@ -146,6 +146,15 @@ class ShannonService extends EventEmitter {
     }
     if (process.env.https_proxy) {
       env.https_proxy = process.env.https_proxy;
+    }
+    
+    // Обнаружен системный прокси - используем его
+    // Многие VPN используют локальный прокси на 127.0.0.1
+    const systemProxy = 'http://127.0.0.1:12334';
+    if (!env.HTTP_PROXY && !env.HTTPS_PROXY) {
+      env.HTTP_PROXY = systemProxy;
+      env.HTTPS_PROXY = systemProxy;
+      pentestService.addLog(pentestId, 'info', `🌐 Обнаружен системный прокси, используем: ${systemProxy}`);
     }
     
     const shannonProcess = spawn('node', [this.SHANNON_DIST_PATH, ...args], {
