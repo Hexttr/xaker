@@ -36,8 +36,19 @@ io.on('connection', (socket) => {
 });
 
 // Start server
-httpServer.listen(PORT, () => {
+httpServer.listen(Number(PORT), () => {
   console.log(`🚀 Backend server running on http://localhost:${PORT}`);
   console.log(`📡 WebSocket server ready`);
+  console.log(`✅ Server is listening on port ${PORT}`);
+});
+
+// Error handling
+httpServer.on('error', (error: NodeJS.ErrnoException) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use`);
+  } else {
+    console.error('❌ Server error:', error);
+  }
+  process.exit(1);
 });
 
