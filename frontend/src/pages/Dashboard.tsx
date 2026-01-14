@@ -205,7 +205,10 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900">
-            Xaker - AI Penetration Tester
+            Pentest.red
+            <span className="text-2xl text-gray-600 font-normal ml-3">
+              AI Penetration Tester
+            </span>
           </h1>
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
