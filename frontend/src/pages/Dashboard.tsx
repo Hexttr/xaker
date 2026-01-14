@@ -74,32 +74,36 @@ function PentestItem({
             <button
               onClick={onStart}
               disabled={startPending}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors duration-200 flex items-center gap-2"
             >
-              Запустить
+              ▶️ Запустить
             </button>
           )}
           {pentest.status === 'running' && (
             <button
               onClick={onStop}
               disabled={stopPending}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors duration-200 flex items-center gap-2 animate-pulse"
             >
-              Остановить
+              ⏹️ Остановить
             </button>
           )}
           <button
             onClick={onToggleExpand}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-2"
           >
-            {expanded ? 'Скрыть логи' : 'Показать логи'}
+            {expanded ? (
+              <>📋 Скрыть логи</>
+            ) : (
+              <>📋 Показать логи</>
+            )}
           </button>
           <button
             onClick={onDelete}
             disabled={deletePending}
-            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors duration-200"
           >
-            Удалить
+            🗑️ Удалить
           </button>
         </div>
       </div>
@@ -203,8 +207,10 @@ export default function Dashboard() {
         </div>
 
         {showCreateForm && (
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-2xl font-semibold mb-4">Создать новый пентест</h2>
+          <div className="bg-white rounded-lg shadow-lg p-4 md:p-6 mb-6 border border-gray-200">
+            <h2 className="text-xl md:text-2xl font-semibold mb-4 text-gray-900">
+              Создать новый пентест
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -235,17 +241,19 @@ export default function Dashboard() {
               <button
                 type="submit"
                 disabled={createMutation.isPending}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50 transition-colors duration-200 w-full md:w-auto"
               >
-                {createMutation.isPending ? 'Создание...' : 'Создать пентест'}
+                {createMutation.isPending ? '⏳ Создание...' : '✅ Создать пентест'}
               </button>
             </form>
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-2xl font-semibold">Список пентестов</h2>
+        <div className="bg-white rounded-lg shadow-lg border border-gray-200">
+          <div className="p-4 md:p-6 border-b border-gray-200">
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
+              Список пентестов
+            </h2>
           </div>
 
           {isLoading ? (
