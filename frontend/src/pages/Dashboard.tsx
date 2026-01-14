@@ -37,6 +37,24 @@ function PentestItem({
     refetchInterval: expanded ? 1000 : false,
   });
 
+  // Получаем текущий статус для отображения
+  const { data: statusData } = useQuery({
+    queryKey: ['pentest-status', pentest.id],
+    queryFn: () => pentestApi.getStatus(pentest.id).then(res => res.data),
+    enabled: pentest.status === 'running',
+    refetchInterval: pentest.status === 'running' ? 2000 : false,
+  });
+
+  // Получаем найденные уязвимости
+  const { data: vulnerabilities = [] } = useQuery({
+    queryKey: ['pentest-vulnerabilities', pentest.id],
+    queryFn: () => pentestApi.getVulnerabilities(pentest.id).then(res => res.data),
+    enabled: pentest.status === 'running' || pentest.status === 'completed',
+    refetchInterval: pentest.status === 'running' ? 3000 : false,
+  });
+
+  const currentStatus = statusData?.status || '⚙️ Выполнение пентеста...';
+
   return (
     <div className="p-4 md:p-6 hover:bg-gray-50 transition-colors duration-200">
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
@@ -51,6 +69,7 @@ function PentestItem({
               {getStatusText(pentest.status)}
             </span>
           </div>
+          <StatusBar status={currentStatus} isRunning={pentest.status === 'running'} />
           <p className="text-gray-600 mb-2 break-words">
             <span className="font-medium">Цель:</span> 
             <span className="ml-1 font-mono text-xs md:text-sm break-all">{pentest.targetUrl}</span>
@@ -106,7 +125,10 @@ function PentestItem({
       </div>
       {expanded && (
         <div className="mt-4 pt-4 border-t border-gray-200">
-          <LogViewer logs={logs} autoScroll={true} maxHeight="24rem" />
+          <VulnerabilitiesList vulnerabilities={vulnerabilities} />
+          <div className="mt-4">
+            <LogViewer logs={logs} autoScroll={true} maxHeight="24rem" />
+          </div>
         </div>
       )}
     </div>
