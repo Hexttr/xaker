@@ -75,18 +75,18 @@ function PentestItem({
           <StatusBar status={currentStatus} isRunning={pentest.status === 'running'} />
           <p className="text-gray-300 mb-3 break-words flex items-center gap-2">
             <FiTarget className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <span className="font-medium text-gray-400">Target URL:</span> 
+            <span className="font-medium text-gray-400">Цель:</span> 
             <span className="ml-2 text-sm break-all text-cyan-400 font-mono">{pentest.targetUrl}</span>
           </p>
           <div className="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm text-gray-400">
             <span className="flex items-center gap-1">
               <FiClock className="w-3 h-3" />
-              Created: {new Date(pentest.createdAt).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}
+              Создан: {new Date(pentest.createdAt).toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' })}
             </span>
             {pentest.startedAt && (
               <span className="flex items-center gap-1">
                 <FiClock className="w-3 h-3" />
-                Started: {new Date(pentest.startedAt).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}
+                Запущен: {new Date(pentest.startedAt).toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' })}
               </span>
             )}
           </div>
@@ -99,7 +99,7 @@ function PentestItem({
               className="bg-green-600 hover:bg-green-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 flex-1 md:flex-initial"
             >
               <FiPlay className="w-4 h-4" />
-              Start
+              Запустить
             </button>
           )}
           {pentest.status === 'running' && (
@@ -109,7 +109,7 @@ function PentestItem({
               className="bg-red-600 hover:bg-red-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 animate-pulse flex-1 md:flex-initial"
             >
               <FiSquare className="w-4 h-4" />
-              Stop
+              Остановить
             </button>
           )}
           <button
@@ -119,12 +119,12 @@ function PentestItem({
             {expanded ? (
               <>
                 <FiChevronUp className="w-4 h-4" />
-                Hide Logs
+                Скрыть логи
               </>
             ) : (
               <>
                 <FiChevronDown className="w-4 h-4" />
-                Show Logs
+                Показать логи
               </>
             )}
           </button>
@@ -134,7 +134,7 @@ function PentestItem({
             className="bg-gray-700 hover:bg-gray-600 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 flex-1 md:flex-initial border border-gray-600"
           >
             <FiTrash2 className="w-4 h-4" />
-            Delete
+            Удалить
           </button>
         </div>
       </div>
@@ -230,11 +230,10 @@ export default function Dashboard() {
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold">
-                <span className="bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent">
-                  Pentest.red
-                </span>
+                <span className="text-white">Pentest</span>
+                <span className="bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent">.red</span>
               </h1>
-              <p className="text-green-400 text-xs md:text-sm mt-1 font-mono">
+              <p className="text-gray-400 text-xs md:text-sm mt-1">
                 AI Penetration Testing Platform
               </p>
             </div>
@@ -243,7 +242,7 @@ export default function Dashboard() {
               className="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-4 md:px-6 py-2 rounded-lg font-semibold transition-all duration-200 w-full md:w-auto shadow-md hover:shadow-lg flex items-center gap-2"
             >
               <FiPlus className="w-4 h-4" />
-              {showCreateForm ? 'Cancel' : 'New Pentest'}
+              {showCreateForm ? 'Отмена' : 'Новый пентест'}
             </button>
           </div>
         </div>
@@ -256,25 +255,25 @@ export default function Dashboard() {
         {showCreateForm && (
           <div className="bg-gray-900 rounded-lg shadow-lg p-4 md:p-6 mb-6 border border-gray-700 border-l-4 border-l-green-500">
             <h2 className="text-xl md:text-2xl font-semibold mb-4 text-white">
-              Create New Pentest
+              Создать новый пентест
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Pentest Name
+                  Название пентеста
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  placeholder="e.g., Web Application Security Test"
+                  placeholder="Например: Тест веб-приложения"
                   required
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Target URL
+                  URL цели
                 </label>
                 <input
                   type="url"
@@ -290,7 +289,7 @@ export default function Dashboard() {
                 disabled={createMutation.isPending}
                 className="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50 transition-colors duration-200 w-full md:w-auto shadow-md hover:shadow-lg"
               >
-                {createMutation.isPending ? 'Creating...' : 'Create Pentest'}
+                {createMutation.isPending ? 'Создание...' : 'Создать пентест'}
               </button>
             </form>
           </div>
@@ -299,18 +298,18 @@ export default function Dashboard() {
         <div className="bg-gray-900 rounded-lg shadow-lg border border-gray-700">
           <div className="p-4 md:p-6 border-b border-gray-700">
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
-              Active Pentests
+              Активные пентесты
             </h2>
             <p className="text-gray-400 text-sm md:text-base">
-              Monitor and manage your security assessments.
+              Мониторинг и управление проверками безопасности.
             </p>
           </div>
 
           {isLoading ? (
-            <div className="p-6 text-center text-gray-400">Loading...</div>
+            <div className="p-6 text-center text-gray-400">Загрузка...</div>
           ) : pentests.length === 0 ? (
             <div className="p-6 text-center text-gray-400">
-              No pentests created yet. Create a new pentest to get started.
+              Пентесты еще не созданы. Создайте новый пентест для начала.
             </div>
           ) : (
             <div className="divide-y divide-gray-700">
