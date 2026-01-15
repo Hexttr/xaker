@@ -229,14 +229,18 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-                <FiShield className="w-6 h-6 md:w-7 md:h-7 text-red-600" />
-                <span className="text-white">Pentest</span>
-                <span className="bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent">.red</span>
+              <h1 className="text-2xl md:text-3xl font-bold flex items-start gap-2.5">
+                <FiShield className="w-7 h-7 md:w-8 md:h-8 text-red-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="flex items-center gap-0">
+                    <span className="text-white">Pentest</span>
+                    <span className="bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent">.red</span>
+                  </div>
+                  <p className="text-gray-400 text-xs md:text-sm mt-1">
+                    AI Penetration Testing Platform
+                  </p>
+                </div>
               </h1>
-              <p className="text-gray-400 text-xs md:text-sm mt-1">
-                AI Penetration Testing Platform
-              </p>
             </div>
             <button
               onClick={() => setShowCreateForm(!showCreateForm)}
