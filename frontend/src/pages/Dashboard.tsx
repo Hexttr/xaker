@@ -60,8 +60,8 @@ function PentestItem({
     <div className="p-4 md:p-6 hover:bg-gray-800 transition-colors duration-200 border-l-4 border-l-transparent hover:border-l-green-500">
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
-            <h3 className="text-lg md:text-xl font-semibold text-green-400 break-words font-mono">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-3">
+            <h3 className="text-lg md:text-xl font-semibold text-white break-words">
               {pentest.name}
             </h3>
             <span
@@ -71,17 +71,17 @@ function PentestItem({
             </span>
           </div>
           <StatusBar status={currentStatus} isRunning={pentest.status === 'running'} />
-          <p className="text-gray-300 mb-2 break-words font-mono">
-            <span className="font-medium text-green-400">Цель:</span> 
-            <span className="ml-1 text-xs md:text-sm break-all text-cyan-400">{pentest.targetUrl}</span>
+          <p className="text-gray-300 mb-3 break-words">
+            <span className="font-medium text-gray-400">Target URL:</span> 
+            <span className="ml-2 text-sm break-all text-cyan-400 font-mono">{pentest.targetUrl}</span>
           </p>
-          <div className="flex flex-wrap gap-2 md:gap-3 text-xs md:text-sm text-gray-400 font-mono">
+          <div className="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm text-gray-400">
             <span>
-              📅 Создан: {new Date(pentest.createdAt).toLocaleString('ru-RU')}
+              Created: {new Date(pentest.createdAt).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}
             </span>
             {pentest.startedAt && (
               <span>
-                🚀 Запущен: {new Date(pentest.startedAt).toLocaleString('ru-RU')}
+                Started: {new Date(pentest.startedAt).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}
               </span>
             )}
           </div>
@@ -93,7 +93,7 @@ function PentestItem({
               disabled={startPending}
               className="bg-green-600 hover:bg-green-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 flex-1 md:flex-initial"
             >
-              ▶️ Запустить
+              Start
             </button>
           )}
           {pentest.status === 'running' && (
@@ -102,7 +102,7 @@ function PentestItem({
               disabled={stopPending}
               className="bg-red-600 hover:bg-red-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium disabled:opacity-50 transition-colors duration-200 flex items-center justify-center gap-2 animate-pulse flex-1 md:flex-initial"
             >
-              ⏹️ Остановить
+              Stop
             </button>
           )}
           <button
@@ -110,17 +110,17 @@ function PentestItem({
             className="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 flex-1 md:flex-initial shadow-md hover:shadow-lg"
           >
             {expanded ? (
-              <>📋 Скрыть логи</>
+              <>Hide Logs</>
             ) : (
-              <>📋 Показать логи</>
+              <>Show Logs</>
             )}
           </button>
           <button
             onClick={onDelete}
             disabled={deletePending}
-            className="bg-gray-600 hover:bg-gray-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium disabled:opacity-50 transition-colors duration-200 flex-1 md:flex-initial"
+            className="bg-gray-700 hover:bg-gray-600 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium disabled:opacity-50 transition-colors duration-200 flex-1 md:flex-initial border border-gray-600"
           >
-            🗑️ Удалить
+            Delete
           </button>
         </div>
       </div>
@@ -209,55 +209,63 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-black p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 md:mb-8">
-          <div>
-            <h1 className="text-2xl md:text-4xl font-bold">
-              <span className="bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent">
-                Pentest.red
-              </span>
-            </h1>
-            <p className="text-green-400 text-sm mt-1 hidden md:block font-mono">
-              AI пентестер
-            </p>
+    <div className="min-h-screen bg-black flex flex-col">
+      {/* Header */}
+      <header className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold">
+                <span className="bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent">
+                  Pentest.red
+                </span>
+              </h1>
+              <p className="text-green-400 text-xs md:text-sm mt-1 font-mono">
+                AI Penetration Testing Platform
+              </p>
+            </div>
+            <button
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-4 md:px-6 py-2 rounded-lg font-semibold transition-all duration-200 w-full md:w-auto shadow-md hover:shadow-lg"
+            >
+              {showCreateForm ? 'Отмена' : '+ New Pentest'}
+            </button>
           </div>
-          <button
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            className="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-4 md:px-6 py-2 rounded-lg font-semibold transition-all duration-200 w-full md:w-auto shadow-md hover:shadow-lg"
-          >
-            {showCreateForm ? 'Отмена' : '+ Новый пентест'}
-          </button>
         </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
 
         {showCreateForm && (
           <div className="bg-gray-900 rounded-lg shadow-lg p-4 md:p-6 mb-6 border border-gray-700 border-l-4 border-l-green-500">
-            <h2 className="text-xl md:text-2xl font-semibold mb-4 text-green-400 font-mono">
-              Создать новый пентест
+            <h2 className="text-xl md:text-2xl font-semibold mb-4 text-white">
+              Create New Pentest
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-green-400 mb-2 font-mono">
-                  Название пентеста
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Pentest Name
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-green-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono"
-                  placeholder="Например: Тест веб-приложения"
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="e.g., Web Application Security Test"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-green-400 mb-2 font-mono">
-                  URL цели
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Target URL
                 </label>
                 <input
                   type="url"
                   value={formData.targetUrl}
                   onChange={(e) => setFormData({ ...formData, targetUrl: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-green-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono"
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono"
                   placeholder="https://example.com"
                   required
                 />
@@ -267,7 +275,7 @@ export default function Dashboard() {
                 disabled={createMutation.isPending}
                 className="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50 transition-colors duration-200 w-full md:w-auto shadow-md hover:shadow-lg"
               >
-                {createMutation.isPending ? '⏳ Создание...' : '✅ Создать пентест'}
+                {createMutation.isPending ? 'Creating...' : 'Create Pentest'}
               </button>
             </form>
           </div>
@@ -275,16 +283,19 @@ export default function Dashboard() {
 
         <div className="bg-gray-900 rounded-lg shadow-lg border border-gray-700">
           <div className="p-4 md:p-6 border-b border-gray-700">
-            <h2 className="text-xl md:text-2xl font-semibold text-green-400 font-mono">
-              Список пентестов
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
+              Active Pentests
             </h2>
+            <p className="text-gray-400 text-sm md:text-base">
+              Monitor and manage your security assessments.
+            </p>
           </div>
 
           {isLoading ? (
-            <div className="p-6 text-center text-green-400 font-mono">Загрузка...</div>
+            <div className="p-6 text-center text-gray-400">Loading...</div>
           ) : pentests.length === 0 ? (
-            <div className="p-6 text-center text-gray-400 font-mono">
-              Нет созданных пентестов. Создайте новый пентест для начала.
+            <div className="p-6 text-center text-gray-400">
+              No pentests created yet. Create a new pentest to get started.
             </div>
           ) : (
             <div className="divide-y divide-gray-700">
@@ -311,7 +322,17 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-      </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-800 bg-gray-900/50 backdrop-blur-sm mt-auto">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4">
+          <p className="text-center text-gray-400 text-sm font-mono">
+            Enterprise Security Platform • Real-time Threat Detection
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
