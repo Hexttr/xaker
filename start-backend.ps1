@@ -4,3 +4,4 @@ Write-Host "🚀 Запускаю backend..." -ForegroundColor Cyan
 Write-Host ""
 npx tsx src/server.ts
 
+

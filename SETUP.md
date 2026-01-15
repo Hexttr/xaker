@@ -110,3 +110,4 @@ npm run install:all
 2. Изучите компоненты в `frontend/src/`
 3. Начните разработку согласно `PLAN.md`
 
+

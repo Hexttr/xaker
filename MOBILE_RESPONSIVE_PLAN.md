@@ -19,3 +19,4 @@
 - Кнопки: `flex flex-col md:flex-row gap-2`
 - Отступы: `p-4 md:p-6`
 
+

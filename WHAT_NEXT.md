@@ -146,3 +146,4 @@ private async executeShannon(pentestId: string, config: Pentest['config']): Prom
 
 Начните с изучения Shannon - это ключевой шаг. Как только поймете, как он работает, интеграция станет простой!
 
+

@@ -57,11 +57,11 @@ function PentestItem({
   const currentStatus = statusData?.status || '⚙️ Выполнение пентеста...';
 
   return (
-    <div className="p-4 md:p-6 hover:bg-gray-50 transition-colors duration-200">
+    <div className="p-4 md:p-6 hover:bg-gray-800 transition-colors duration-200 border-l-4 border-l-transparent hover:border-l-green-500">
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
-            <h3 className="text-lg md:text-xl font-semibold text-gray-900 break-words">
+            <h3 className="text-lg md:text-xl font-semibold text-green-400 break-words font-mono">
               {pentest.name}
             </h3>
             <span
@@ -71,11 +71,11 @@ function PentestItem({
             </span>
           </div>
           <StatusBar status={currentStatus} isRunning={pentest.status === 'running'} />
-          <p className="text-gray-600 mb-2 break-words">
-            <span className="font-medium">Цель:</span> 
-            <span className="ml-1 font-mono text-xs md:text-sm break-all">{pentest.targetUrl}</span>
+          <p className="text-gray-300 mb-2 break-words font-mono">
+            <span className="font-medium text-green-400">Цель:</span> 
+            <span className="ml-1 text-xs md:text-sm break-all text-cyan-400">{pentest.targetUrl}</span>
           </p>
-          <div className="flex flex-wrap gap-2 md:gap-3 text-xs md:text-sm text-gray-500">
+          <div className="flex flex-wrap gap-2 md:gap-3 text-xs md:text-sm text-gray-400 font-mono">
             <span>
               📅 Создан: {new Date(pentest.createdAt).toLocaleString('ru-RU')}
             </span>
@@ -125,7 +125,7 @@ function PentestItem({
         </div>
       </div>
       {expanded && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="mt-4 pt-4 border-t border-gray-700">
           <VulnerabilitiesList vulnerabilities={vulnerabilities} />
           <div className="mt-4">
             <LogViewer logs={logs} autoScroll={true} maxHeight="24rem" />
@@ -209,16 +209,16 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+    <div className="min-h-screen bg-black p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 md:mb-8">
           <div>
-            <h1 className="text-2xl md:text-4xl font-bold text-gray-900">
+            <h1 className="text-2xl md:text-4xl font-bold">
               <span className="bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent">
                 Pentest.red
               </span>
             </h1>
-            <p className="text-gray-500 text-sm mt-1 hidden md:block">
+            <p className="text-green-400 text-sm mt-1 hidden md:block font-mono">
               AI пентестер
             </p>
           </div>
@@ -231,33 +231,33 @@ export default function Dashboard() {
         </div>
 
         {showCreateForm && (
-          <div className="bg-white rounded-lg shadow-lg p-4 md:p-6 mb-6 border border-gray-200">
-            <h2 className="text-xl md:text-2xl font-semibold mb-4 text-gray-900">
+          <div className="bg-gray-900 rounded-lg shadow-lg p-4 md:p-6 mb-6 border border-gray-700 border-l-4 border-l-green-500">
+            <h2 className="text-xl md:text-2xl font-semibold mb-4 text-green-400 font-mono">
               Создать новый пентест
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-green-400 mb-2 font-mono">
                   Название пентеста
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-green-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono"
                   placeholder="Например: Тест веб-приложения"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-green-400 mb-2 font-mono">
                   URL цели
                 </label>
                 <input
                   type="url"
                   value={formData.targetUrl}
                   onChange={(e) => setFormData({ ...formData, targetUrl: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-green-400 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono"
                   placeholder="https://example.com"
                   required
                 />
@@ -265,7 +265,7 @@ export default function Dashboard() {
               <button
                 type="submit"
                 disabled={createMutation.isPending}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50 transition-colors duration-200 w-full md:w-auto"
+                className="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50 transition-colors duration-200 w-full md:w-auto shadow-md hover:shadow-lg"
               >
                 {createMutation.isPending ? '⏳ Создание...' : '✅ Создать пентест'}
               </button>
@@ -273,21 +273,21 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-lg border border-gray-200">
-          <div className="p-4 md:p-6 border-b border-gray-200">
-            <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
+        <div className="bg-gray-900 rounded-lg shadow-lg border border-gray-700">
+          <div className="p-4 md:p-6 border-b border-gray-700">
+            <h2 className="text-xl md:text-2xl font-semibold text-green-400 font-mono">
               Список пентестов
             </h2>
           </div>
 
           {isLoading ? (
-            <div className="p-6 text-center text-gray-500">Загрузка...</div>
+            <div className="p-6 text-center text-green-400 font-mono">Загрузка...</div>
           ) : pentests.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">
+            <div className="p-6 text-center text-gray-400 font-mono">
               Нет созданных пентестов. Создайте новый пентест для начала.
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-gray-700">
               {pentests.map((pentest) => (
                 <PentestItem
                   key={pentest.id}

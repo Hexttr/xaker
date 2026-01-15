@@ -4,3 +4,4 @@ Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force
 Start-Sleep -Seconds 2
 Write-Host "✅ Все процессы остановлены" -ForegroundColor Green
 
+

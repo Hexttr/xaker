@@ -10,16 +10,17 @@ export default function StatusBar({ status, isRunning = false }: StatusBarProps)
   }
 
   return (
-    <div className="mt-2 mb-3 px-3 py-2 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
+    <div className="mt-2 mb-3 px-3 py-2 bg-gray-800 border-l-4 border-green-500 rounded-r-lg">
       <div className="flex items-center gap-2">
         <div className="flex-shrink-0">
-          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
         </div>
-        <span className="text-sm md:text-base text-gray-700 font-medium">
+        <span className="text-sm md:text-base text-green-400 font-medium font-mono">
           {status}
         </span>
       </div>
     </div>
   );
 }
+
 

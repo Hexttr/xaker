@@ -29,7 +29,7 @@ export default function CVSSBadge({
     <div className="flex items-center gap-2">
       {showBar && (
         <div className="flex-1 max-w-[100px]">
-          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden border border-gray-700">
             <div
               className={`h-full transition-all duration-300 ${colors.bg}`}
               style={{ width: `${percentage}%` }}
@@ -38,11 +38,11 @@ export default function CVSSBadge({
         </div>
       )}
       <div className="flex items-center gap-2">
-        <span className={`font-bold ${colors.text}`}>
+        <span className={`font-bold font-mono ${colors.text}`}>
           {score.toFixed(1)}
         </span>
         {showLabel && (
-          <span className={`${sizeClasses[size]} ${colors.bg} text-white rounded-full font-medium`}>
+          <span className={`${sizeClasses[size]} ${colors.bg} text-white rounded-full font-medium font-mono`}>
             {label}
           </span>
         )}
@@ -50,4 +50,5 @@ export default function CVSSBadge({
     </div>
   );
 }
+
 

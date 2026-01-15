@@ -21,38 +21,38 @@ export const getSeverityColors = (severity: SeverityLevel): SeverityColors => {
   switch (severity) {
     case 'critical':
       return {
-        bg: 'bg-red-500',
-        text: 'text-red-700',
-        border: 'border-red-300',
-        light: 'bg-red-50',
+        bg: 'bg-red-600',
+        text: 'text-red-400',
+        border: 'border-red-500',
+        light: 'bg-red-900/30',
       };
     case 'high':
       return {
-        bg: 'bg-orange-500',
-        text: 'text-orange-700',
-        border: 'border-orange-300',
-        light: 'bg-orange-50',
+        bg: 'bg-orange-600',
+        text: 'text-orange-400',
+        border: 'border-orange-500',
+        light: 'bg-orange-900/30',
       };
     case 'medium':
       return {
-        bg: 'bg-yellow-500',
-        text: 'text-yellow-700',
-        border: 'border-yellow-300',
-        light: 'bg-yellow-50',
+        bg: 'bg-yellow-600',
+        text: 'text-yellow-400',
+        border: 'border-yellow-500',
+        light: 'bg-yellow-900/30',
       };
     case 'low':
       return {
-        bg: 'bg-blue-500',
-        text: 'text-blue-700',
-        border: 'border-blue-300',
-        light: 'bg-blue-50',
+        bg: 'bg-cyan-600',
+        text: 'text-cyan-400',
+        border: 'border-cyan-500',
+        light: 'bg-cyan-900/30',
       };
     default:
       return {
-        bg: 'bg-gray-500',
-        text: 'text-gray-700',
-        border: 'border-gray-300',
-        light: 'bg-gray-50',
+        bg: 'bg-gray-600',
+        text: 'text-gray-400',
+        border: 'border-gray-500',
+        light: 'bg-gray-800',
       };
   }
 };
@@ -77,4 +77,5 @@ export const getCVSSColor = (cvss: number): string => {
   const colors = getSeverityColors(level);
   return colors.bg;
 };
+
 

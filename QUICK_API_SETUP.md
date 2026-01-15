@@ -53,3 +53,4 @@ npm run dev
 - **Получить ключ:** https://console.anthropic.com
 - **Документация:** https://docs.anthropic.com
 
+

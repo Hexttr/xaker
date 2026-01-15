@@ -95,3 +95,4 @@ cd xaker
 - ❌ `shannon/` - клонируется отдельно (в .gitignore)
 - ❌ `backend/temp-repo/` - временные файлы (в .gitignore)
 
+

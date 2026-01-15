@@ -16,3 +16,4 @@
 - [ ] Компонент VulnerabilitiesList (frontend)
 - [ ] Интеграция в PentestItem
 
+

@@ -104,3 +104,4 @@ npm run dev
 - **Документация Claude API:** https://docs.anthropic.com
 - **Shannon README:** см. `shannon/README.md`
 
+

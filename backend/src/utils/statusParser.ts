@@ -92,3 +92,4 @@ export function parseStatusFromLogs(logs: Array<{ message: string }>): string {
   return '⚙️ Выполнение пентеста...';
 }
 
+

@@ -72,3 +72,4 @@ Get-Process node | Stop-Process -Force
 - Backend работает на порту **3000**
 - Если порты заняты, измените их в `.env` и `vite.config.ts`
 
+
