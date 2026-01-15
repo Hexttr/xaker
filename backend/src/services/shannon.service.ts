@@ -95,17 +95,25 @@ class ShannonService extends EventEmitter {
     pentestService.addLog(pentestId, 'warn', '💰 ВНИМАНИЕ: Используется реальный Claude API (~$50)');
 
     // Для работы Shannon нужен путь к репозиторию
-    // Если не указан, создаем временный репозиторий
-    const tempRepoPath = join(process.cwd(), 'temp-repo');
-    const repoPath = config.scope?.[0] || tempRepoPath;
+    // Создаем ОТДЕЛЬНУЮ папку для каждого пентеста
+    const pentestsDir = join(process.cwd(), 'pentests');
+    const pentestDir = join(pentestsDir, pentestId);
+    const repoPath = config.scope?.[0] || pentestDir;
     
-    // Создаем временный репозиторий, если его нет
-    if (repoPath === tempRepoPath && !existsSync(repoPath)) {
-      pentestService.addLog(pentestId, 'info', `📁 Создаю временный репозиторий: ${tempRepoPath}`);
-      mkdirSync(tempRepoPath, { recursive: true });
-      // Создаем минимальный .git репозиторий для Shannon
-      mkdirSync(join(tempRepoPath, '.git'), { recursive: true });
-      pentestService.addLog(pentestId, 'info', '✅ Временный репозиторий создан');
+    // Создаем отдельную папку для этого пентеста
+    if (repoPath === pentestDir) {
+      if (!existsSync(pentestsDir)) {
+        mkdirSync(pentestsDir, { recursive: true });
+      }
+      if (!existsSync(pentestDir)) {
+        pentestService.addLog(pentestId, 'info', `📁 Создаю отдельную папку для пентеста: ${pentestDir}`);
+        mkdirSync(pentestDir, { recursive: true });
+        // Создаем минимальный .git репозиторий для Shannon
+        mkdirSync(join(pentestDir, '.git'), { recursive: true });
+        pentestService.addLog(pentestId, 'info', `✅ Папка создана: ${pentestDir}`);
+      } else {
+        pentestService.addLog(pentestId, 'info', `📁 Использую существующую папку: ${pentestDir}`);
+      }
     }
     
     const apiKey = process.env.ANTHROPIC_API_KEY!;

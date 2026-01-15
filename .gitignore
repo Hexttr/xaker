@@ -55,3 +55,9 @@ backend/shannon/
 # Temporary repository for pentests
 backend/temp-repo/
 
+# Pentests data directory (contains reports and outputs for each pentest)
+backend/pentests/
+
+# Pentests metadata (JSON files with pentest data)
+backend/pentests-data/
+
