@@ -4,7 +4,7 @@ import { pentestApi, Pentest, CreatePentestRequest } from '../services/api';
 import LogViewer from '../components/LogViewer';
 import StatusBar from '../components/StatusBar';
 import VulnerabilitiesList from '../components/VulnerabilitiesList';
-import { FiPlus, FiPlay, FiSquare, FiTrash2, FiChevronDown, FiChevronUp, FiClock, FiTarget, FiAlertCircle } from 'react-icons/fi';
+import { FiPlus, FiPlay, FiSquare, FiTrash2, FiChevronDown, FiChevronUp, FiClock, FiTarget, FiAlertCircle, FiShield } from 'react-icons/fi';
 
 // Компонент для отображения отдельного пентеста
 function PentestItem({
@@ -229,7 +229,8 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold">
+              <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+                <FiShield className="w-6 h-6 md:w-7 md:h-7 text-red-600" />
                 <span className="text-white">Pentest</span>
                 <span className="bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent">.red</span>
               </h1>
