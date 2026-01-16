@@ -351,19 +351,47 @@ ${limitedContent}
       }
     }
     
-    // Удаляем все английские разделы после заключения
+    // Удаляем все английские разделы после заключения - более агрессивная очистка
     const englishPatterns = [
       /##\s*[A-Z][a-z\s]+Report/gi,
       /##\s*Authentication\s+Analysis/gi,
       /##\s*Security\s+Assessment/gi,
       /##\s*Detailed\s+Analysis/gi,
-      /##\s*[A-Z][a-z\s]+Dashboard/gi
+      /##\s*[A-Z][a-z\s]+Dashboard/gi,
+      /##\s*Executive\s+Summary/gi,
+      /##\s*[A-Z][a-z\s]+Analysis/gi,
+      /##\s*[A-Z][a-z\s]+Report/gi
     ];
     
+    // Удаляем все что после заключения, если там английские разделы
+    if (conclusionMatch && conclusionMatch.index !== undefined) {
+      const afterConclusion = cleanedReport.substring(conclusionMatch.index + conclusionMatch[0].length);
+      // Проверяем, есть ли английские разделы после заключения
+      let hasEnglishAfter = false;
+      for (const pattern of englishPatterns) {
+        if (pattern.test(afterConclusion)) {
+          hasEnglishAfter = true;
+          break;
+        }
+      }
+      
+      if (hasEnglishAfter) {
+        // Удаляем все после заключения
+        cleanedReport = cleanedReport.substring(0, conclusionMatch.index + conclusionMatch[0].length);
+      }
+    }
+    
+    // Удаляем все английские разделы в любом месте документа
     for (const pattern of englishPatterns) {
       const matches = [...cleanedReport.matchAll(pattern)];
       for (const match of matches) {
         if (match.index !== undefined) {
+          // Пропускаем, если это часть правильного отчета (Executive Summary в разделе 1)
+          const beforeMatch = cleanedReport.substring(Math.max(0, match.index - 100), match.index);
+          if (beforeMatch.includes('### 1') || beforeMatch.includes('### 1.')) {
+            continue; // Это правильный раздел
+          }
+          
           // Удаляем английский раздел до следующего ## или до конца
           const afterMatch = cleanedReport.substring(match.index);
           const endMatch = afterMatch.match(/##\s+[^\n]*\n[\s\S]*?(?=\n##|$)/);
@@ -398,6 +426,40 @@ ${limitedContent}
           const nextMatch = i < matches.length - 1 ? matches[i + 1] : null;
           const endIndex = nextMatch ? nextMatch.index : cleanedReport.length;
           cleanedReport = cleanedReport.substring(0, match.index) + cleanedReport.substring(endIndex);
+        }
+      }
+    }
+    
+    // Удаляем повторы разделов - находим все разделы 1-6 и оставляем только первый цикл
+    const sectionPatterns = [
+      { pattern: /###\s*1[\.\)]?\s*Executive\s+Summary/i, name: 'Executive Summary' },
+      { pattern: /###\s*2[\.\)]?\s*Методология/i, name: 'Методология' },
+      { pattern: /###\s*3[\.\)]?\s*Детальный\s+анализ/i, name: 'Детальный анализ' },
+      { pattern: /###\s*4[\.\)]?\s*Оценка\s+рисков/i, name: 'Оценка рисков' },
+      { pattern: /###\s*5[\.\)]?\s*Рекомендации/i, name: 'Рекомендации' },
+      { pattern: /###\s*6[\.\)]?\s*Заключение/i, name: 'Заключение' }
+    ];
+    
+    // Находим первое вхождение каждого раздела
+    const firstOccurrences = [];
+    for (const section of sectionPatterns) {
+      const match = cleanedReport.match(section.pattern);
+      if (match && match.index !== undefined) {
+        firstOccurrences.push(match.index);
+      }
+    }
+    
+    // Если нашли все разделы, удаляем все что после последнего (Заключение)
+    if (firstOccurrences.length === sectionPatterns.length) {
+      const lastSectionIndex = firstOccurrences[firstOccurrences.length - 1];
+      const lastSectionMatch = cleanedReport.substring(lastSectionIndex).match(sectionPatterns[sectionPatterns.length - 1].pattern);
+      if (lastSectionMatch) {
+        // Находим конец раздела "Заключение"
+        const afterLastSection = cleanedReport.substring(lastSectionIndex + lastSectionMatch[0].length);
+        const endMatch = afterLastSection.match(/[\s\S]*?(?=\n##|$)/);
+        if (endMatch) {
+          const endIndex = lastSectionIndex + lastSectionMatch[0].length + endMatch[0].length;
+          cleanedReport = cleanedReport.substring(0, endIndex);
         }
       }
     }
