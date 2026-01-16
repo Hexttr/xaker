@@ -208,26 +208,56 @@ ${allFilesContent.substring(0, 200000)} // Ограничиваем размер
         // Используем query из Claude Agent SDK (как в Shannon)
         let fullResponse = '';
         let result: string | null = null;
+        let messageCount = 0;
         
+        console.log('Отправляю запрос к Claude AI для генерации цепочки взлома...');
         for await (const message of query({ prompt, options })) {
-          if (message.type === 'assistant') {
-            // В Shannon результат берется из assistant сообщения
-            if (message.content) {
-              for (const content of message.content) {
-                if (content.type === 'text') {
-                  result = content.text;
-                  fullResponse = result;
+          messageCount++;
+          
+          // Обрабатываем сообщение типа 'result' - это финальный результат (как в Shannon)
+          if (message.type === 'result') {
+            const resultMessage = message as any;
+            // В Shannon результат берется из resultMessage.result
+            if (resultMessage.result && typeof resultMessage.result === 'string') {
+              result = resultMessage.result;
+              fullResponse = result;
+              console.log(`✅ Получен результат из result.result (${result.length} символов)`);
+            } else if (resultMessage.content) {
+              if (typeof resultMessage.content === 'string') {
+                result = resultMessage.content;
+                fullResponse = result;
+                console.log(`✅ Получен результат из result.content (${result.length} символов)`);
+              }
+            } else if (resultMessage.text) {
+              result = resultMessage.text;
+              fullResponse = result;
+              console.log(`✅ Получен результат из result.text (${result.length} символов)`);
+            }
+          } else if (message.type === 'assistant') {
+            // В Shannon также собираем из assistant сообщений
+            const assistantMsg = message as any;
+            if (assistantMsg.message && assistantMsg.message.content) {
+              const content = Array.isArray(assistantMsg.message.content)
+                ? assistantMsg.message.content.map((c: any) => c.text || JSON.stringify(c)).join('\n')
+                : String(assistantMsg.message.content);
+              if (content && typeof content === 'string') {
+                fullResponse += content + '\n';
+                if (!result) result = content;
+                console.log(`✅ Получен текст из assistant.message.content (${content.length} символов)`);
+              }
+            } else if (assistantMsg.content && Array.isArray(assistantMsg.content)) {
+              for (const content of assistantMsg.content) {
+                if (content.type === 'text' && content.text) {
+                  fullResponse += content.text + '\n';
+                  if (!result) result = content.text;
+                  console.log(`✅ Получен текст из assistant.content[] (${content.text.length} символов)`);
                 }
               }
             }
-          } else if (message.type === 'text-delta' || message.type === 'text') {
-            // Также собираем текстовые дельты
-            const text = typeof message.text === 'string' ? message.text : '';
-            if (text) {
-              fullResponse += text;
-            }
           }
         }
+        
+        console.log(`Всего сообщений: ${messageCount}, Длина ответа: ${fullResponse.length}`);
 
         // Восстанавливаем оригинальные значения прокси
         if (originalHttpProxy) process.env.HTTP_PROXY = originalHttpProxy;

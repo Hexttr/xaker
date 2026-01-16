@@ -172,28 +172,63 @@ ${limitedContent}
     // Используем query из Claude Agent SDK (как в Shannon)
     let fullResponse = '';
     let result = null;
+    let messageCount = 0;
     
+    console.log('   📡 Отправляю запрос к Claude AI...');
     for await (const message of query({ prompt, options })) {
-      if (message.type === 'assistant') {
-        // В Shannon результат берется из assistant сообщения
-        if (message.content) {
+      messageCount++;
+      
+      // Обрабатываем сообщение типа 'result' - это финальный результат (как в Shannon)
+      if (message.type === 'result') {
+        // В Shannon результат берется из resultMessage.result
+        if (message.result && typeof message.result === 'string') {
+          result = message.result;
+          fullResponse = result;
+          console.log(`   ✅ Получен результат из result.result (${result.length} символов)`);
+        } else if (message.content) {
+          if (typeof message.content === 'string') {
+            result = message.content;
+            fullResponse = result;
+            console.log(`   ✅ Получен результат из result.content (${result.length} символов)`);
+          }
+        } else if (message.text) {
+          result = message.text;
+          fullResponse = result;
+          console.log(`   ✅ Получен результат из result.text (${result.length} символов)`);
+        }
+      } else if (message.type === 'assistant') {
+        // В Shannon также собираем из assistant сообщений
+        if (message.message && message.message.content) {
+          const content = Array.isArray(message.message.content)
+            ? message.message.content.map((c) => c.text || JSON.stringify(c)).join('\n')
+            : String(message.message.content);
+          if (content && typeof content === 'string') {
+            fullResponse += content + '\n';
+            if (!result) result = content;
+            console.log(`   ✅ Получен текст из assistant.message.content (${content.length} символов)`);
+          }
+        } else if (message.content && Array.isArray(message.content)) {
           for (const content of message.content) {
-            if (content.type === 'text') {
-              result = content.text;
-              fullResponse = result;
+            if (content.type === 'text' && content.text) {
+              fullResponse += content.text + '\n';
+              if (!result) result = content.text;
+              console.log(`   ✅ Получен текст из assistant.content[] (${content.text.length} символов)`);
             }
           }
-        }
-      } else if (message.type === 'text-delta' || message.type === 'text') {
-        // Также собираем текстовые дельты
-        const text = typeof message.text === 'string' ? message.text : '';
-        if (text) {
-          fullResponse += text;
         }
       }
     }
 
+    console.log(`   📊 Всего сообщений: ${messageCount}, Длина ответа: ${fullResponse.length}`);
+    
     const attackChain = result || fullResponse;
+    
+    if (!attackChain || attackChain.trim().length === 0) {
+      console.log('   ⚠️  Цепочка взлома пуста, используется fallback');
+      return generateAttackChainSimple(content, targetUrl);
+    }
+    
+    console.log(`   ✅ Цепочка взлома сгенерирована (${attackChain.length} символов)`);
 
     return `### 🎯 Детальная цепочка взлома (Attack Chain)
 
