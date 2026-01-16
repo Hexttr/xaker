@@ -381,7 +381,29 @@ ${limitedContent}
       }
     }
     
-    // Удаляем все английские разделы в любом месте документа
+    // Удаляем все английские разделы в любом месте документа (включая внутри отчета)
+    // Сначала находим границы правильного отчета (от раздела 1 до раздела 6)
+    const section1Pattern = /###\s*1[\.\)]?\s*Executive\s+Summary/i;
+    const section6Pattern = /###\s*6[\.\)]?\s*Заключение/i;
+    const section1Match = cleanedReport.match(section1Pattern);
+    const section6Match = cleanedReport.match(section6Pattern);
+    
+    let reportStart = 0;
+    let reportEnd = cleanedReport.length;
+    
+    if (section1Match && section1Match.index !== undefined) {
+      reportStart = section1Match.index;
+    }
+    if (section6Match && section6Match.index !== undefined) {
+      // Находим конец раздела 6
+      const afterSection6 = cleanedReport.substring(section6Match.index);
+      const endMatch = afterSection6.match(/###\s*6[\.\)]?\s*Заключение[\s\S]*?(?=\n###\s*[1-6]|\n##\s+[^#]|\n---|$)/i);
+      if (endMatch) {
+        reportEnd = section6Match.index + endMatch[0].length;
+      }
+    }
+    
+    // Удаляем английские разделы ВНУТРИ отчета (между разделами 1-6)
     for (const pattern of englishPatterns) {
       const matches = [...cleanedReport.matchAll(pattern)];
       for (const match of matches) {
@@ -392,7 +414,23 @@ ${limitedContent}
             continue; // Это правильный раздел
           }
           
-          // Удаляем английский раздел до следующего ## или до конца
+          // Удаляем английский раздел, если он внутри отчета (между разделами 1-6)
+          if (match.index >= reportStart && match.index < reportEnd) {
+            // Находим конец английского раздела
+            const afterMatch = cleanedReport.substring(match.index);
+            const endMatch = afterMatch.match(/##\s+[^\n]*\n[\s\S]*?(?=\n###\s*[1-6]|\n##\s+[^#]|\n---|$)/);
+            if (endMatch) {
+              cleanedReport = cleanedReport.substring(0, match.index) + cleanedReport.substring(match.index + endMatch[0].length);
+              // Обновляем границы после удаления
+              reportEnd -= endMatch[0].length;
+            } else {
+              cleanedReport = cleanedReport.substring(0, match.index);
+              reportEnd = match.index;
+            }
+            continue;
+          }
+          
+          // Удаляем английский раздел вне отчета
           const afterMatch = cleanedReport.substring(match.index);
           const endMatch = afterMatch.match(/##\s+[^\n]*\n[\s\S]*?(?=\n##|$)/);
           if (endMatch) {
