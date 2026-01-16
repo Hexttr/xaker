@@ -99,6 +99,7 @@ function cleanReportFromEnglishSections(response) {
   }
   
   // Удаляем английские разделы после заключения
+  // ВАЖНО: Добавляем конкретные заголовки из исходных файлов
   const englishPatterns = [
     /##\s*[A-Z][a-z\s]+Report/gi,
     /##\s*Authentication\s+Analysis/gi,
@@ -118,7 +119,19 @@ function cleanReportFromEnglishSections(response) {
     /##\s*Impact/gi,
     /##\s*Severity/gi,
     /##\s*Prerequisites/gi,
-    /##\s*Notes/gi
+    /##\s*Notes/gi,
+    // Конкретные заголовки из исходных файлов deliverables
+    /##\s*Security\s+Assessment\s+Report/gi,
+    /##\s*Authentication\s+Exploitation\s+Evidence/gi,
+    /##\s*Authentication\s+Analysis\s+Report/gi,
+    /##\s*Authorization\s+Analysis\s+Report/gi,
+    /##\s*Penetration\s+Test\s+Scope\s+&\s+Boundaries/gi,
+    /##\s*Injection\s+Analysis\s+Report/gi,
+    /##\s*Pre-Reconnaissance\s+Report/gi,
+    /##\s*Reconnaissance\s+Deliverable/gi,
+    /##\s*SSRF\s+Analysis\s+Report/gi,
+    /##\s*Cross-Site\s+Scripting\s+\(XSS\)\s+Analysis\s+Report/gi,
+    /##\s*XSS\s+Analysis\s+Report/gi
   ];
   
   if (conclusionMatch && conclusionMatch.index !== undefined) {

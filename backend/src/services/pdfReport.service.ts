@@ -422,6 +422,7 @@ ${allFilesContent.substring(0, 200000)}
         }
         
         // Удаляем все английские разделы после заключения - более агрессивная очистка
+        // ВАЖНО: Добавляем конкретные заголовки из исходных файлов
         const englishPatterns = [
           /##\s*[A-Z][a-z\s]+Report/gi,
           /##\s*Authentication\s+Analysis/gi,
@@ -436,7 +437,19 @@ ${allFilesContent.substring(0, 200000)}
           /##\s*[A-Z][a-z\s]+Vulnerability/gi,
           /##\s*[A-Z][a-z\s]+Bypass/gi,
           /##\s*[A-Z][a-z\s]+Access/gi,
-          /##\s*[A-Z][a-z\s]+Endpoint/gi
+          /##\s*[A-Z][a-z\s]+Endpoint/gi,
+          // Конкретные заголовки из исходных файлов deliverables
+          /##\s*Security\s+Assessment\s+Report/gi,
+          /##\s*Authentication\s+Exploitation\s+Evidence/gi,
+          /##\s*Authentication\s+Analysis\s+Report/gi,
+          /##\s*Authorization\s+Analysis\s+Report/gi,
+          /##\s*Penetration\s+Test\s+Scope\s+&\s+Boundaries/gi,
+          /##\s*Injection\s+Analysis\s+Report/gi,
+          /##\s*Pre-Reconnaissance\s+Report/gi,
+          /##\s*Reconnaissance\s+Deliverable/gi,
+          /##\s*SSRF\s+Analysis\s+Report/gi,
+          /##\s*Cross-Site\s+Scripting\s+\(XSS\)\s+Analysis\s+Report/gi,
+          /##\s*XSS\s+Analysis\s+Report/gi
         ];
         
         // Удаляем все что после заключения, если там английские разделы
@@ -525,6 +538,7 @@ ${allFilesContent.substring(0, 200000)}
         }
         
         // Удаляем английские разделы с заголовками типа "Summary of Findings", "Technical Details" и т.д.
+        // ВАЖНО: Удаляем все английские заголовки разделов, которые попадают из исходных файлов
         const englishSectionHeaders = [
           /##\s*Summary\s+of\s+Findings/gi,
           /##\s*Technical\s+Details/gi,
@@ -537,7 +551,25 @@ ${allFilesContent.substring(0, 200000)}
           /##\s*Impact/gi,
           /##\s*Severity/gi,
           /##\s*Prerequisites/gi,
-          /##\s*Notes/gi
+          /##\s*Notes/gi,
+          // Конкретные заголовки из исходных файлов
+          /##\s*Security\s+Assessment\s+Report/gi,
+          /##\s*Authentication\s+Exploitation\s+Evidence/gi,
+          /##\s*Authentication\s+Analysis\s+Report/gi,
+          /##\s*Authorization\s+Analysis\s+Report/gi,
+          /##\s*Penetration\s+Test\s+Scope\s+&\s+Boundaries/gi,
+          /##\s*Injection\s+Analysis\s+Report/gi,
+          /##\s*Pre-Reconnaissance\s+Report/gi,
+          /##\s*Reconnaissance\s+Deliverable/gi,
+          /##\s*SSRF\s+Analysis\s+Report/gi,
+          /##\s*Cross-Site\s+Scripting\s+\(XSS\)\s+Analysis\s+Report/gi,
+          /##\s*XSS\s+Analysis\s+Report/gi,
+          // Общие паттерны для английских заголовков
+          /##\s*[A-Z][a-z\s]+Analysis\s+Report/gi,
+          /##\s*[A-Z][a-z\s]+Exploitation\s+Evidence/gi,
+          /##\s*[A-Z][a-z\s]+Deliverable/gi,
+          /##\s*[A-Z][a-z\s]+Report/gi,
+          /##\s*[A-Z][a-z\s]+Summary/gi
         ];
         
         for (const pattern of englishSectionHeaders) {
