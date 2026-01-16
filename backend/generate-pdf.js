@@ -309,6 +309,56 @@ function cleanReportFromEnglishSections(response) {
   return cleanedReport + '\n\n---\n\n*Отчет сгенерирован с использованием Claude AI на основе анализа всех файлов результатов пентеста.*';
 }
 
+// Очистить финальный отчет от всех английских разделов
+function cleanFinalReport(report) {
+  let cleaned = report;
+  
+  // Удаляем раздел "📊 Детальные результаты анализа" и все что после него
+  const analysisSectionIndex = cleaned.indexOf('## 📊 Детальные результаты анализа');
+  if (analysisSectionIndex !== -1) {
+    cleaned = cleaned.substring(0, analysisSectionIndex);
+  }
+  
+  // Удаляем все английские заголовки разделов и их содержимое
+  const englishHeaders = [
+    /##\s*Security\s+Assessment\s+Report/gi,
+    /##\s*Authentication\s+Exploitation\s+Evidence/gi,
+    /##\s*Authentication\s+Analysis\s+Report/gi,
+    /##\s*Authorization\s+Analysis\s+Report/gi,
+    /##\s*Penetration\s+Test\s+Scope\s+&\s+Boundaries/gi,
+    /##\s*Injection\s+Analysis\s+Report/gi,
+    /##\s*Pre-Reconnaissance\s+Report/gi,
+    /##\s*Reconnaissance\s+Deliverable/gi,
+    /##\s*SSRF\s+Analysis\s+Report/gi,
+    /##\s*Cross-Site\s+Scripting\s+\(XSS\)\s+Analysis\s+Report/gi,
+    /##\s*XSS\s+Analysis\s+Report/gi,
+    /##\s*Summary\s+of\s+Findings/gi,
+    /##\s*Technical\s+Details/gi,
+    /##\s*[A-Z][a-z\s]+Analysis\s+Report/gi,
+    /##\s*[A-Z][a-z\s]+Exploitation\s+Evidence/gi,
+    /##\s*[A-Z][a-z\s]+Deliverable/gi
+  ];
+  
+  for (const pattern of englishHeaders) {
+    const matches = [...cleaned.matchAll(pattern)];
+    for (let i = matches.length - 1; i >= 0; i--) {
+      const match = matches[i];
+      if (match.index !== undefined) {
+        // Находим конец этого раздела (до следующего ## или ###)
+        const afterMatch = cleaned.substring(match.index);
+        const endMatch = afterMatch.match(/##\s+[^\n]*\n[\s\S]*?(?=\n##\s+[^#]|\n###\s+[^#]|\n---|$)/);
+        if (endMatch) {
+          cleaned = cleaned.substring(0, match.index) + cleaned.substring(match.index + endMatch[0].length);
+        } else {
+          cleaned = cleaned.substring(0, match.index);
+        }
+      }
+    }
+  }
+  
+  return cleaned;
+}
+
 // Генерировать Markdown отчет
 async function generateMarkdownReport(pentestId, pentest, deliverablesDir) {
   const files = getAllReportFiles(deliverablesDir);
