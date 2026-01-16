@@ -4,6 +4,7 @@ import { EventEmitter } from 'events';
 import { spawn, ChildProcess } from 'child_process';
 import { join, resolve, normalize } from 'path';
 import { existsSync, mkdirSync, readdirSync, statSync } from 'fs';
+import fetch from 'node-fetch';
 
 /**
  * Сервис для интеграции с Shannon
