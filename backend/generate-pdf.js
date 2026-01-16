@@ -2,7 +2,7 @@ const { join } = require('path');
 const { existsSync, readFileSync, readdirSync, statSync } = require('fs');
 const { marked } = require('marked');
 const puppeteer = require('puppeteer');
-const Anthropic = require('@anthropic-ai/sdk');
+const { query } = require('@anthropic-ai/claude-agent-sdk');
 
 // ID пентестов
 const TEST_2_ID = '19fc79c3-ecc1-4463-ac00-06b8f1f621fa';
@@ -149,22 +149,51 @@ ${limitedContent}
 
   try {
     console.log('   🤖 Генерирую цепочку взлома через Claude AI...');
-    const anthropic = new Anthropic({
+    
+    // Настраиваем прокси для VPN (как в Shannon)
+    const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || process.env.http_proxy || process.env.https_proxy || 'http://127.0.0.1:12334';
+    
+    if (proxyUrl) {
+      console.log(`   🌐 Используется прокси: ${proxyUrl}`);
+      // Устанавливаем переменные окружения для прокси
+      process.env.HTTP_PROXY = proxyUrl;
+      process.env.HTTPS_PROXY = proxyUrl;
+    }
+    
+    // Опции для query (как в Shannon)
+    const options = {
       apiKey: apiKey,
-    });
+      model: 'claude-sonnet-4-5-20250929', // Используем ту же модель, что и Shannon
+      maxTurns: 50, // Ограничиваем количество поворотов для генерации отчета
+      cwd: deliverablesDir, // Рабочая директория
+      permissionMode: 'bypassPermissions', // Обходим проверки разрешений
+    };
 
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 8000,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    });
+    // Используем query из Claude Agent SDK (как в Shannon)
+    let fullResponse = '';
+    let result = null;
+    
+    for await (const message of query({ prompt, options })) {
+      if (message.type === 'assistant') {
+        // В Shannon результат берется из assistant сообщения
+        if (message.content) {
+          for (const content of message.content) {
+            if (content.type === 'text') {
+              result = content.text;
+              fullResponse = result;
+            }
+          }
+        }
+      } else if (message.type === 'text-delta' || message.type === 'text') {
+        // Также собираем текстовые дельты
+        const text = typeof message.text === 'string' ? message.text : '';
+        if (text) {
+          fullResponse += text;
+        }
+      }
+    }
 
-    const attackChain = message.content[0].type === 'text' ? message.content[0].text : '';
+    const attackChain = result || fullResponse;
 
     return `### 🎯 Детальная цепочка взлома (Attack Chain)
 

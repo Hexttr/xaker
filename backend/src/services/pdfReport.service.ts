@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
 import { marked } from 'marked';
 import puppeteer from 'puppeteer';
 import { pentestService } from './pentest.service';
-import Anthropic from '@anthropic-ai/sdk';
+import { query } from '@anthropic-ai/claude-agent-sdk';
 
 /**
  * Сервис для генерации PDF отчетов
@@ -183,31 +183,77 @@ ${allFilesContent.substring(0, 200000)} // Ограничиваем размер
 Создай детальную цепочку взлома в формате Markdown.`;
 
     try {
-      const anthropic = new Anthropic({
+      // Настраиваем прокси для VPN (как в Shannon)
+      const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || process.env.http_proxy || process.env.https_proxy || 'http://127.0.0.1:12334';
+      
+      // Опции для query (как в Shannon)
+      const options: any = {
         apiKey: apiKey,
-      });
+        model: 'claude-sonnet-4-5-20250929', // Используем ту же модель, что и Shannon
+        maxTurns: 50, // Ограничиваем количество поворотов для генерации отчета
+        cwd: deliverablesDir, // Рабочая директория
+        permissionMode: 'bypassPermissions' as const, // Обходим проверки разрешений
+      };
 
-      const message = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 8000,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-      });
+      // Устанавливаем прокси для VPN (как в Shannon)
+      const originalHttpProxy = process.env.HTTP_PROXY;
+      const originalHttpsProxy = process.env.HTTPS_PROXY;
+      
+      if (proxyUrl) {
+        process.env.HTTP_PROXY = proxyUrl;
+        process.env.HTTPS_PROXY = proxyUrl;
+      }
+      
+      try {
+        // Используем query из Claude Agent SDK (как в Shannon)
+        let fullResponse = '';
+        let result: string | null = null;
+        
+        for await (const message of query({ prompt, options })) {
+          if (message.type === 'assistant') {
+            // В Shannon результат берется из assistant сообщения
+            if (message.content) {
+              for (const content of message.content) {
+                if (content.type === 'text') {
+                  result = content.text;
+                  fullResponse = result;
+                }
+              }
+            }
+          } else if (message.type === 'text-delta' || message.type === 'text') {
+            // Также собираем текстовые дельты
+            const text = typeof message.text === 'string' ? message.text : '';
+            if (text) {
+              fullResponse += text;
+            }
+          }
+        }
 
-      const attackChain = message.content[0].type === 'text' ? message.content[0].text : '';
+        // Восстанавливаем оригинальные значения прокси
+        if (originalHttpProxy) process.env.HTTP_PROXY = originalHttpProxy;
+        else delete process.env.HTTP_PROXY;
+        if (originalHttpsProxy) process.env.HTTPS_PROXY = originalHttpsProxy;
+        else delete process.env.HTTPS_PROXY;
 
-      return `### 🎯 Детальная цепочка взлома (Attack Chain)
+        const finalResponse = result || fullResponse;
 
-${attackChain}
+        return `### 🎯 Детальная цепочка взлома (Attack Chain)
+
+${finalResponse}
 
 ---
 
 *Цепочка взлома сгенерирована с использованием Claude AI на основе анализа всех файлов результатов пентеста.*
 `;
+      } catch (queryError: any) {
+        // Восстанавливаем оригинальные значения прокси при ошибке
+        if (originalHttpProxy) process.env.HTTP_PROXY = originalHttpProxy;
+        else delete process.env.HTTP_PROXY;
+        if (originalHttpsProxy) process.env.HTTPS_PROXY = originalHttpsProxy;
+        else delete process.env.HTTPS_PROXY;
+        
+        throw queryError;
+      }
     } catch (error: any) {
       console.error('Ошибка при вызове Claude API:', error);
       throw error;
