@@ -213,11 +213,15 @@ ${aiReport}
 - НЕ ДУБЛИРУЙ информацию
 - НЕ создавай дополнительные разделы вне указанной структуры
 - Фокус на бизнес-ценности и практических рекомендациях
+- ОТЧЕТ ДОЛЖЕН БЫТЬ ТОЛЬКО НА РУССКОМ ЯЗЫКЕ
+- НЕ добавляй английские разделы, заголовки или документацию
+- НЕ добавляй разделы "Authentication Analysis Report", "Security Assessment Report" и подобные
+- НЕ добавляй техническую документацию на английском языке
 
 ФАЙЛЫ С РЕЗУЛЬТАТАМИ ПЕНТЕСТА:
 ${allFilesContent.substring(0, 200000)}
 
-Создай ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА в бизнес-формате на русском языке. Отчет должен содержать ТОЛЬКО указанную структуру, БЕЗ ПОВТОРОВ и лишних разделов.`;
+Создай ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА в бизнес-формате на русском языке. Отчет должен содержать ТОЛЬКО указанную структуру, БЕЗ ПОВТОРОВ, лишних разделов и английской документации.`;
 
     try {
       // Настраиваем прокси для VPN (как в Shannon)
@@ -319,33 +323,94 @@ ${allFilesContent.substring(0, 200000)}
         // Очищаем ответ от лишних разделов - оставляем ТОЛЬКО "ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА"
         let cleanedResponse = finalResponse;
         
-        // Удаляем все заголовки и разделы до "ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА"
-        const fullReportIndex = cleanedResponse.search(/##\s*ПОЛНЫЙ\s+ОТЧЕТ\s+ПО\s+РЕЗУЛЬТАТАМ\s+ПЕНТЕСТА/i);
-        if (fullReportIndex !== -1) {
-          cleanedResponse = cleanedResponse.substring(fullReportIndex);
-        }
+        // Находим начало "ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА"
+        const fullReportPattern = /##\s*ПОЛНЫЙ\s+ОТЧЕТ\s+ПО\s+РЕЗУЛЬТАТАМ\s+ПЕНТЕСТА/i;
+        const fullReportMatch = cleanedResponse.match(fullReportPattern);
         
-        // Удаляем все что после заключения (раздел 6)
-        const conclusionIndex = cleanedResponse.search(/###\s*6[\.\)]?\s*Заключение/i);
-        if (conclusionIndex !== -1) {
-          // Находим конец раздела "Заключение"
-          const nextSectionMatch = cleanedResponse.substring(conclusionIndex).match(/^###\s*6[\.\)]?\s*Заключение[\s\S]*?(?=\n##|\n---|$)/i);
-          if (nextSectionMatch) {
-            const endIndex = conclusionIndex + nextSectionMatch[0].length;
-            cleanedResponse = cleanedResponse.substring(0, endIndex);
+        if (fullReportMatch && fullReportMatch.index !== undefined) {
+          // Удаляем все что до начала отчета
+          cleanedResponse = cleanedResponse.substring(fullReportMatch.index);
+        } else {
+          // Если не нашли точный заголовок, ищем альтернативные варианты
+          const altPatterns = [
+            /##\s*ПОЛНЫЙ\s+ОТЧЕТ/i,
+            /##\s*ОТЧЕТ\s+ПО\s+РЕЗУЛЬТАТАМ/i,
+            /###\s*1[\.\)]?\s*Executive\s+Summary/i
+          ];
+          
+          for (const pattern of altPatterns) {
+            const match = cleanedResponse.match(pattern);
+            if (match && match.index !== undefined) {
+              // Ищем начало отчета (может быть немного выше)
+              const startIndex = Math.max(0, match.index - 200);
+              cleanedResponse = cleanedResponse.substring(startIndex);
+              break;
+            }
           }
         }
         
-        // Удаляем разделы "Детальные результаты анализа" и все что ниже
+        // Удаляем все английские разделы в начале (до "ПОЛНЫЙ ОТЧЕТ")
+        const englishSections = [
+          /^[^#]*##\s*[A-Z][a-z]+.*?(?=##\s*ПОЛНЫЙ\s+ОТЧЕТ|###\s*1[\.\)]?\s*Executive)/is,
+          /^[^#]*##\s*Executive\s+Summary.*?(?=##\s*ПОЛНЫЙ\s+ОТЧЕТ|###\s*1[\.\)]?\s*Executive)/is,
+          /^[^#]*##\s*[A-Z][a-z\s]+Report.*?(?=##\s*ПОЛНЫЙ\s+ОТЧЕТ|###\s*1[\.\)]?\s*Executive)/is
+        ];
+        
+        for (const pattern of englishSections) {
+          cleanedResponse = cleanedResponse.replace(pattern, '');
+        }
+        
+        // Находим конец отчета - ищем раздел "Заключение" (раздел 6)
+        const conclusionPattern = /###\s*6[\.\)]?\s*Заключение/i;
+        const conclusionMatch = cleanedResponse.match(conclusionPattern);
+        
+        if (conclusionMatch && conclusionMatch.index !== undefined) {
+          // Находим конец раздела "Заключение" - до следующего ## или до конца
+          const afterConclusion = cleanedResponse.substring(conclusionMatch.index);
+          const endMatch = afterConclusion.match(/###\s*6[\.\)]?\s*Заключение[\s\S]*?(?=\n##\s+[^#]|\n---|$)/i);
+          
+          if (endMatch) {
+            const endIndex = conclusionMatch.index + endMatch[0].length;
+            cleanedResponse = cleanedResponse.substring(0, endIndex);
+          } else {
+            // Если не нашли конец, берем до следующего ## или до конца
+            const nextSectionMatch = afterConclusion.match(/###\s*6[\.\)]?\s*Заключение[\s\S]*?(?=\n##|$)/i);
+            if (nextSectionMatch) {
+              const endIndex = conclusionMatch.index + nextSectionMatch[0].length;
+              cleanedResponse = cleanedResponse.substring(0, endIndex);
+            }
+          }
+        }
+        
+        // Удаляем все английские разделы после заключения
+        const englishPatterns = [
+          /##\s*[A-Z][a-z\s]+Report/gi,
+          /##\s*Authentication\s+Analysis/gi,
+          /##\s*Security\s+Assessment/gi,
+          /##\s*Detailed\s+Analysis/gi,
+          /##\s*[A-Z][a-z\s]+Dashboard/gi
+        ];
+        
+        for (const pattern of englishPatterns) {
+          const matches = [...cleanedResponse.matchAll(pattern)];
+          for (const match of matches) {
+            if (match.index !== undefined) {
+              // Удаляем английский раздел до следующего ## или до конца
+              const afterMatch = cleanedResponse.substring(match.index);
+              const endMatch = afterMatch.match(/##\s+[^\n]*\n[\s\S]*?(?=\n##|$)/);
+              if (endMatch) {
+                cleanedResponse = cleanedResponse.substring(0, match.index) + cleanedResponse.substring(match.index + endMatch[0].length);
+              } else {
+                cleanedResponse = cleanedResponse.substring(0, match.index);
+              }
+            }
+          }
+        }
+        
+        // Удаляем раздел "Детальные результаты анализа" и все что ниже
         const analysisSectionIndex = cleanedResponse.indexOf('## 📊 Детальные результаты анализа');
         if (analysisSectionIndex !== -1) {
           cleanedResponse = cleanedResponse.substring(0, analysisSectionIndex);
-        }
-        
-        // Удаляем разделы "Authentication Analysis Report" и подобные
-        const authReportIndex = cleanedResponse.indexOf('## Authentication Analysis Report');
-        if (authReportIndex !== -1) {
-          cleanedResponse = cleanedResponse.substring(0, authReportIndex);
         }
         
         // Удаляем старые разделы 1-4 если они есть (КРАТКИЙ СПИСОК, ДЭШБОРД, ЦЕПОЧКА)
@@ -365,6 +430,15 @@ ${allFilesContent.substring(0, 200000)}
               const endIndex = nextMatch ? nextMatch.index : cleanedResponse.length;
               cleanedResponse = cleanedResponse.substring(0, match.index) + cleanedResponse.substring(endIndex);
             }
+          }
+        }
+        
+        // Убеждаемся, что отчет начинается с "ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА"
+        if (!cleanedResponse.match(/^##\s*ПОЛНЫЙ\s+ОТЧЕТ\s+ПО\s+РЕЗУЛЬТАТАМ\s+ПЕНТЕСТА/i)) {
+          // Если не начинается с правильного заголовка, добавляем его
+          const firstSectionMatch = cleanedResponse.match(/###\s*1[\.\)]?\s*Executive\s+Summary/i);
+          if (firstSectionMatch && firstSectionMatch.index !== undefined) {
+            cleanedResponse = '## ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА\n\n' + cleanedResponse.substring(firstSectionMatch.index);
           }
         }
         
