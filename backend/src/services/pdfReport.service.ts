@@ -113,7 +113,8 @@ ${aiReport}
 *Отчет сгенерирован автоматически AI Penetration Testing Platform*
 `;
 
-    return report;
+    // ВАЖНО: Применяем очистку ко всему финальному отчету для удаления английских разделов
+    return this.cleanFinalReport(report);
   }
 
   /**

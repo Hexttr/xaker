@@ -419,10 +419,11 @@ ${allContent}
 
 *Дата создания отчета: ${new Date().toLocaleString('ru-RU')}*
 
-*Отчет сгенерирован автоматически AI Penetration Testing Platform*
-`;
+*Отчет сгенерирован автоматически AI Penetration Testing Platform`
+;
 
-  return report;
+  // ВАЖНО: Применяем очистку ко всему финальному отчету для удаления английских разделов
+  return cleanFinalReport(report);
 }
 
 // Генерировать детальную цепочку взлома с использованием Claude AI
