@@ -71,7 +71,10 @@ class PdfReportService {
     }
 
     // Генерируем отчет с новым промптом
-    const aiReport = await this.generateAttackChain(allContent, pentest.targetUrl, deliverablesDir);
+    let aiReport = await this.generateAttackChain(allContent, pentest.targetUrl, deliverablesDir);
+    
+    // Применяем очистку к результату независимо от источника (AI или fallback)
+    aiReport = this.cleanReportFromEnglishSections(aiReport);
     
     const report = `# 🛡️ Отчет о пентесте: ${pentest.targetUrl}
 
@@ -337,7 +340,27 @@ ${allFilesContent.substring(0, 200000)}
         const finalResponse = result || fullResponse;
 
         // Очищаем ответ от лишних разделов - оставляем ТОЛЬКО "ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА"
-        let cleanedResponse = finalResponse;
+        return this.cleanReportFromEnglishSections(finalResponse);
+      } catch (queryError: any) {
+        // Восстанавливаем оригинальные значения прокси при ошибке
+        if (originalHttpProxy) process.env.HTTP_PROXY = originalHttpProxy;
+        else delete process.env.HTTP_PROXY;
+        if (originalHttpsProxy) process.env.HTTPS_PROXY = originalHttpsProxy;
+        else delete process.env.HTTPS_PROXY;
+        
+        throw queryError;
+      }
+    } catch (error: any) {
+      console.error('Ошибка при вызове Claude API:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Очистить отчет от английских разделов и повторов
+   */
+  private cleanReportFromEnglishSections(response: string): string {
+    let cleanedResponse = response;
         
         // Находим начало "ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА"
         const fullReportPattern = /##\s*ПОЛНЫЙ\s+ОТЧЕТ\s+ПО\s+РЕЗУЛЬТАТАМ\s+ПЕНТЕСТА/i;
@@ -608,19 +631,6 @@ ${allFilesContent.substring(0, 200000)}
         cleanedResponse = cleanedResponse.trim();
         
         return cleanedResponse + '\n\n---\n\n*Отчет сгенерирован с использованием Claude AI на основе анализа всех файлов результатов пентеста.*';
-      } catch (queryError: any) {
-        // Восстанавливаем оригинальные значения прокси при ошибке
-        if (originalHttpProxy) process.env.HTTP_PROXY = originalHttpProxy;
-        else delete process.env.HTTP_PROXY;
-        if (originalHttpsProxy) process.env.HTTPS_PROXY = originalHttpsProxy;
-        else delete process.env.HTTPS_PROXY;
-        
-        throw queryError;
-      }
-    } catch (error: any) {
-      console.error('Ошибка при вызове Claude API:', error);
-      throw error;
-    }
   }
 
   /**

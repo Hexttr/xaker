@@ -40,6 +40,262 @@ function getAllReportFiles(deliverablesDir) {
   return files;
 }
 
+// Очистить отчет от английских разделов и повторов
+function cleanReportFromEnglishSections(response) {
+  let cleanedReport = response;
+  
+  // Находим начало "ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА"
+  const fullReportPattern = /##\s*ПОЛНЫЙ\s+ОТЧЕТ\s+ПО\s+РЕЗУЛЬТАТАМ\s+ПЕНТЕСТА/i;
+  const fullReportMatch = cleanedReport.match(fullReportPattern);
+  
+  if (fullReportMatch && fullReportMatch.index !== undefined) {
+    cleanedReport = cleanedReport.substring(fullReportMatch.index);
+  } else {
+    const altPatterns = [
+      /##\s*ПОЛНЫЙ\s+ОТЧЕТ/i,
+      /##\s*ОТЧЕТ\s+ПО\s+РЕЗУЛЬТАТАМ/i,
+      /###\s*1[\.\)]?\s*Executive\s+Summary/i
+    ];
+    
+    for (const pattern of altPatterns) {
+      const match = cleanedReport.match(pattern);
+      if (match && match.index !== undefined) {
+        const startIndex = Math.max(0, match.index - 200);
+        cleanedReport = cleanedReport.substring(startIndex);
+        break;
+      }
+    }
+  }
+  
+  // Удаляем английские разделы в начале
+  const englishSections = [
+    /^[^#]*##\s*[A-Z][a-z]+.*?(?=##\s*ПОЛНЫЙ\s+ОТЧЕТ|###\s*1[\.\)]?\s*Executive)/is,
+    /^[^#]*##\s*Executive\s+Summary.*?(?=##\s*ПОЛНЫЙ\s+ОТЧЕТ|###\s*1[\.\)]?\s*Executive)/is,
+    /^[^#]*##\s*[A-Z][a-z\s]+Report.*?(?=##\s*ПОЛНЫЙ\s+ОТЧЕТ|###\s*1[\.\)]?\s*Executive)/is
+  ];
+  
+  for (const pattern of englishSections) {
+    cleanedReport = cleanedReport.replace(pattern, '');
+  }
+  
+  // Находим конец отчета - раздел "Заключение" (раздел 6)
+  const conclusionPattern = /###\s*6[\.\)]?\s*Заключение/i;
+  const conclusionMatch = cleanedReport.match(conclusionPattern);
+  
+  if (conclusionMatch && conclusionMatch.index !== undefined) {
+    const afterConclusion = cleanedReport.substring(conclusionMatch.index);
+    const endMatch = afterConclusion.match(/###\s*6[\.\)]?\s*Заключение[\s\S]*?(?=\n##\s+[^#]|\n---|$)/i);
+    
+    if (endMatch) {
+      const endIndex = conclusionMatch.index + endMatch[0].length;
+      cleanedReport = cleanedReport.substring(0, endIndex);
+    } else {
+      const nextSectionMatch = afterConclusion.match(/###\s*6[\.\)]?\s*Заключение[\s\S]*?(?=\n##|$)/i);
+      if (nextSectionMatch) {
+        const endIndex = conclusionMatch.index + nextSectionMatch[0].length;
+        cleanedReport = cleanedReport.substring(0, endIndex);
+      }
+    }
+  }
+  
+  // Удаляем английские разделы после заключения
+  const englishPatterns = [
+    /##\s*[A-Z][a-z\s]+Report/gi,
+    /##\s*Authentication\s+Analysis/gi,
+    /##\s*Security\s+Assessment/gi,
+    /##\s*Detailed\s+Analysis/gi,
+    /##\s*[A-Z][a-z\s]+Dashboard/gi,
+    /##\s*Executive\s+Summary/gi,
+    /##\s*[A-Z][a-z\s]+Analysis/gi,
+    /##\s*Summary\s+of\s+Findings/gi,
+    /##\s*Technical\s+Details/gi,
+    /##\s*[A-Z][a-z\s]+Vulnerability/gi,
+    /##\s*[A-Z][a-z\s]+Bypass/gi,
+    /##\s*[A-Z][a-z\s]+Access/gi,
+    /##\s*[A-Z][a-z\s]+Endpoint/gi,
+    /##\s*Vulnerable\s+location/gi,
+    /##\s*Overview/gi,
+    /##\s*Impact/gi,
+    /##\s*Severity/gi,
+    /##\s*Prerequisites/gi,
+    /##\s*Notes/gi
+  ];
+  
+  if (conclusionMatch && conclusionMatch.index !== undefined) {
+    const afterConclusion = cleanedReport.substring(conclusionMatch.index + conclusionMatch[0].length);
+    let hasEnglishAfter = false;
+    for (const pattern of englishPatterns) {
+      if (pattern.test(afterConclusion)) {
+        hasEnglishAfter = true;
+        break;
+      }
+    }
+    
+    if (hasEnglishAfter) {
+      cleanedReport = cleanedReport.substring(0, conclusionMatch.index + conclusionMatch[0].length);
+    }
+  }
+  
+  // Удаляем английские разделы внутри отчета
+  const section1Pattern = /###\s*1[\.\)]?\s*Executive\s+Summary/i;
+  const section6Pattern = /###\s*6[\.\)]?\s*Заключение/i;
+  const section1Match = cleanedReport.match(section1Pattern);
+  const section6Match = cleanedReport.match(section6Pattern);
+  
+  let reportStart = 0;
+  let reportEnd = cleanedReport.length;
+  
+  if (section1Match && section1Match.index !== undefined) {
+    reportStart = section1Match.index;
+  }
+  if (section6Match && section6Match.index !== undefined) {
+    const afterSection6 = cleanedReport.substring(section6Match.index);
+    const endMatch = afterSection6.match(/###\s*6[\.\)]?\s*Заключение[\s\S]*?(?=\n###\s*[1-6]|\n##\s+[^#]|\n---|$)/i);
+    if (endMatch) {
+      reportEnd = section6Match.index + endMatch[0].length;
+    }
+  }
+  
+  for (const pattern of englishPatterns) {
+    const matches = [...cleanedReport.matchAll(pattern)];
+    for (const match of matches) {
+      if (match.index !== undefined) {
+        const beforeMatch = cleanedReport.substring(Math.max(0, match.index - 100), match.index);
+        if (beforeMatch.includes('### 1') || beforeMatch.includes('### 1.')) {
+          continue;
+        }
+        
+        if (match.index >= reportStart && match.index < reportEnd) {
+          const afterMatch = cleanedReport.substring(match.index);
+          const endMatch = afterMatch.match(/##\s+[^\n]*\n[\s\S]*?(?=\n###\s*[1-6]|\n##\s+[^#]|\n---|$)/);
+          if (endMatch) {
+            cleanedReport = cleanedReport.substring(0, match.index) + cleanedReport.substring(match.index + endMatch[0].length);
+            reportEnd -= endMatch[0].length;
+          } else {
+            cleanedReport = cleanedReport.substring(0, match.index);
+            reportEnd = match.index;
+          }
+          continue;
+        }
+        
+        const afterMatch = cleanedReport.substring(match.index);
+        const endMatch = afterMatch.match(/##\s+[^\n]*\n[\s\S]*?(?=\n##|$)/);
+        if (endMatch) {
+          cleanedReport = cleanedReport.substring(0, match.index) + cleanedReport.substring(match.index + endMatch[0].length);
+        } else {
+          cleanedReport = cleanedReport.substring(0, match.index);
+        }
+      }
+    }
+  }
+  
+  // Удаляем раздел "Детальные результаты анализа"
+  const analysisSectionIndex = cleanedReport.indexOf('## 📊 Детальные результаты анализа');
+  if (analysisSectionIndex !== -1) {
+    cleanedReport = cleanedReport.substring(0, analysisSectionIndex);
+  }
+  
+  // Удаляем английские разделы с заголовками
+  const englishSectionHeaders = [
+    /##\s*Summary\s+of\s+Findings/gi,
+    /##\s*Technical\s+Details/gi,
+    /##\s*[A-Z][a-z]+\s+Vulnerability/gi,
+    /##\s*[A-Z][a-z]+\s+Bypass/gi,
+    /##\s*[A-Z][a-z]+\s+Access/gi,
+    /##\s*[A-Z][a-z]+\s+Endpoint/gi,
+    /##\s*Vulnerable\s+location/gi,
+    /##\s*Overview/gi,
+    /##\s*Impact/gi,
+    /##\s*Severity/gi,
+    /##\s*Prerequisites/gi,
+    /##\s*Notes/gi
+  ];
+  
+  for (const pattern of englishSectionHeaders) {
+    const matches = [...cleanedReport.matchAll(pattern)];
+    for (const match of matches) {
+      if (match.index !== undefined) {
+        const beforeMatch = cleanedReport.substring(Math.max(0, match.index - 200), match.index);
+        if (beforeMatch.includes('### 1') || beforeMatch.includes('### 2') || beforeMatch.includes('### 3') || 
+            beforeMatch.includes('### 4') || beforeMatch.includes('### 5') || beforeMatch.includes('### 6') ||
+            beforeMatch.includes('ПОЛНЫЙ ОТЧЕТ')) {
+          continue;
+        }
+        
+        const afterMatch = cleanedReport.substring(match.index);
+        const endMatch = afterMatch.match(/##\s+[^\n]*\n[\s\S]*?(?=\n###\s*[1-6]|\n##\s+[^#]|\n---|$)/);
+        if (endMatch) {
+          cleanedReport = cleanedReport.substring(0, match.index) + cleanedReport.substring(match.index + endMatch[0].length);
+        } else {
+          cleanedReport = cleanedReport.substring(0, match.index);
+        }
+      }
+    }
+  }
+  
+  // Удаляем старые разделы 1-4
+  const oldSections = [
+    /##?\s*1[\.\)]\s*КРАТКИЙ\s+СПИСОК/gi,
+    /##?\s*2[\.\)]\s*ПОДРОБНЫЙ\s+ДЭШБОРД/gi,
+    /##?\s*3[\.\)]\s*ПОШАГОВАЯ\s+ЦЕПОЧКА/gi
+  ];
+  
+  for (const pattern of oldSections) {
+    const matches = [...cleanedReport.matchAll(pattern)];
+    if (matches.length > 0) {
+      for (let i = matches.length - 1; i >= 0; i--) {
+        const match = matches[i];
+        const nextMatch = i < matches.length - 1 ? matches[i + 1] : null;
+        const endIndex = nextMatch ? nextMatch.index : cleanedReport.length;
+        cleanedReport = cleanedReport.substring(0, match.index) + cleanedReport.substring(endIndex);
+      }
+    }
+  }
+  
+  // Удаляем повторы разделов 1-6
+  const sectionPatterns = [
+    { pattern: /###\s*1[\.\)]?\s*Executive\s+Summary/i, name: 'Executive Summary' },
+    { pattern: /###\s*2[\.\)]?\s*Методология/i, name: 'Методология' },
+    { pattern: /###\s*3[\.\)]?\s*Детальный\s+анализ/i, name: 'Детальный анализ' },
+    { pattern: /###\s*4[\.\)]?\s*Оценка\s+рисков/i, name: 'Оценка рисков' },
+    { pattern: /###\s*5[\.\)]?\s*Рекомендации/i, name: 'Рекомендации' },
+    { pattern: /###\s*6[\.\)]?\s*Заключение/i, name: 'Заключение' }
+  ];
+  
+  const firstOccurrences = [];
+  for (const section of sectionPatterns) {
+    const match = cleanedReport.match(section.pattern);
+    if (match && match.index !== undefined) {
+      firstOccurrences.push(match.index);
+    }
+  }
+  
+  if (firstOccurrences.length === sectionPatterns.length) {
+    const lastSectionIndex = firstOccurrences[firstOccurrences.length - 1];
+    const lastSectionMatch = cleanedReport.substring(lastSectionIndex).match(sectionPatterns[sectionPatterns.length - 1].pattern);
+    if (lastSectionMatch) {
+      const afterLastSection = cleanedReport.substring(lastSectionIndex + lastSectionMatch[0].length);
+      const endMatch = afterLastSection.match(/[\s\S]*?(?=\n##|$)/);
+      if (endMatch) {
+        const endIndex = lastSectionIndex + lastSectionMatch[0].length + endMatch[0].length;
+        cleanedReport = cleanedReport.substring(0, endIndex);
+      }
+    }
+  }
+  
+  // Убеждаемся, что отчет начинается с "ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА"
+  if (!cleanedReport.match(/^##\s*ПОЛНЫЙ\s+ОТЧЕТ\s+ПО\s+РЕЗУЛЬТАТАМ\s+ПЕНТЕСТА/i)) {
+    const firstSectionMatch = cleanedReport.match(/###\s*1[\.\)]?\s*Executive\s+Summary/i);
+    if (firstSectionMatch && firstSectionMatch.index !== undefined) {
+      cleanedReport = '## ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА\n\n' + cleanedReport.substring(firstSectionMatch.index);
+    }
+  }
+  
+  cleanedReport = cleanedReport.trim();
+  
+  return cleanedReport + '\n\n---\n\n*Отчет сгенерирован с использованием Claude AI на основе анализа всех файлов результатов пентеста.*';
+}
+
 // Генерировать Markdown отчет
 async function generateMarkdownReport(pentestId, pentest, deliverablesDir) {
   const files = getAllReportFiles(deliverablesDir);
@@ -55,7 +311,10 @@ async function generateMarkdownReport(pentestId, pentest, deliverablesDir) {
   }
 
   // Генерируем детальный AI-отчет
-  const aiReport = await generateAttackChainWithAI(allContent, pentest.targetUrl, deliverablesDir);
+  let aiReport = await generateAttackChainWithAI(allContent, pentest.targetUrl, deliverablesDir);
+  
+  // Применяем очистку к результату независимо от источника (AI или fallback)
+  aiReport = cleanReportFromEnglishSections(aiReport);
 
   const report = `# 🛡️ Отчет о пентесте: ${pentest.targetUrl}
 
@@ -305,282 +564,14 @@ ${limitedContent}
     
     console.log(`   ✅ Цепочка взлома сгенерирована (${attackChain.length} символов)`);
 
-    // Очищаем ответ от лишних разделов - оставляем ТОЛЬКО "ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА"
-    let cleanedReport = attackChain;
-    
-    // Находим начало "ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА"
-    const fullReportPattern = /##\s*ПОЛНЫЙ\s+ОТЧЕТ\s+ПО\s+РЕЗУЛЬТАТАМ\s+ПЕНТЕСТА/i;
-    const fullReportMatch = cleanedReport.match(fullReportPattern);
-    
-    if (fullReportMatch && fullReportMatch.index !== undefined) {
-      // Удаляем все что до начала отчета
-      cleanedReport = cleanedReport.substring(fullReportMatch.index);
-    } else {
-      // Если не нашли точный заголовок, ищем альтернативные варианты
-      const altPatterns = [
-        /##\s*ПОЛНЫЙ\s+ОТЧЕТ/i,
-        /##\s*ОТЧЕТ\s+ПО\s+РЕЗУЛЬТАТАМ/i,
-        /###\s*1[\.\)]?\s*Executive\s+Summary/i
-      ];
-      
-      for (const pattern of altPatterns) {
-        const match = cleanedReport.match(pattern);
-        if (match && match.index !== undefined) {
-          // Ищем начало отчета (может быть немного выше)
-          const startIndex = Math.max(0, match.index - 200);
-          cleanedReport = cleanedReport.substring(startIndex);
-          break;
-        }
-      }
-    }
-    
-    // Удаляем все английские разделы в начале (до "ПОЛНЫЙ ОТЧЕТ")
-    const englishSections = [
-      /^[^#]*##\s*[A-Z][a-z]+.*?(?=##\s*ПОЛНЫЙ\s+ОТЧЕТ|###\s*1[\.\)]?\s*Executive)/is,
-      /^[^#]*##\s*Executive\s+Summary.*?(?=##\s*ПОЛНЫЙ\s+ОТЧЕТ|###\s*1[\.\)]?\s*Executive)/is,
-      /^[^#]*##\s*[A-Z][a-z\s]+Report.*?(?=##\s*ПОЛНЫЙ\s+ОТЧЕТ|###\s*1[\.\)]?\s*Executive)/is
-    ];
-    
-    for (const pattern of englishSections) {
-      cleanedReport = cleanedReport.replace(pattern, '');
-    }
-    
-    // Находим конец отчета - ищем раздел "Заключение" (раздел 6)
-    const conclusionPattern = /###\s*6[\.\)]?\s*Заключение/i;
-    const conclusionMatch = cleanedReport.match(conclusionPattern);
-    
-    if (conclusionMatch && conclusionMatch.index !== undefined) {
-      // Находим конец раздела "Заключение" - до следующего ## или до конца
-      const afterConclusion = cleanedReport.substring(conclusionMatch.index);
-      const endMatch = afterConclusion.match(/###\s*6[\.\)]?\s*Заключение[\s\S]*?(?=\n##\s+[^#]|\n---|$)/i);
-      
-      if (endMatch) {
-        const endIndex = conclusionMatch.index + endMatch[0].length;
-        cleanedReport = cleanedReport.substring(0, endIndex);
-      } else {
-        // Если не нашли конец, берем до следующего ## или до конца
-        const nextSectionMatch = afterConclusion.match(/###\s*6[\.\)]?\s*Заключение[\s\S]*?(?=\n##|$)/i);
-        if (nextSectionMatch) {
-          const endIndex = conclusionMatch.index + nextSectionMatch[0].length;
-          cleanedReport = cleanedReport.substring(0, endIndex);
-        }
-      }
-    }
-    
-    // Удаляем все английские разделы после заключения - более агрессивная очистка
-    const englishPatterns = [
-      /##\s*[A-Z][a-z\s]+Report/gi,
-      /##\s*Authentication\s+Analysis/gi,
-      /##\s*Security\s+Assessment/gi,
-      /##\s*Detailed\s+Analysis/gi,
-      /##\s*[A-Z][a-z\s]+Dashboard/gi,
-      /##\s*Executive\s+Summary/gi,
-      /##\s*[A-Z][a-z\s]+Analysis/gi,
-      /##\s*[A-Z][a-z\s]+Report/gi,
-      /##\s*Summary\s+of\s+Findings/gi,
-      /##\s*Technical\s+Details/gi,
-      /##\s*[A-Z][a-z\s]+Vulnerability/gi,
-      /##\s*[A-Z][a-z\s]+Bypass/gi,
-      /##\s*[A-Z][a-z\s]+Access/gi,
-      /##\s*[A-Z][a-z\s]+Endpoint/gi
-    ];
-    
-    // Удаляем все что после заключения, если там английские разделы
-    if (conclusionMatch && conclusionMatch.index !== undefined) {
-      const afterConclusion = cleanedReport.substring(conclusionMatch.index + conclusionMatch[0].length);
-      // Проверяем, есть ли английские разделы после заключения
-      let hasEnglishAfter = false;
-      for (const pattern of englishPatterns) {
-        if (pattern.test(afterConclusion)) {
-          hasEnglishAfter = true;
-          break;
-        }
-      }
-      
-      if (hasEnglishAfter) {
-        // Удаляем все после заключения
-        cleanedReport = cleanedReport.substring(0, conclusionMatch.index + conclusionMatch[0].length);
-      }
-    }
-    
-    // Удаляем все английские разделы в любом месте документа (включая внутри отчета)
-    // Сначала находим границы правильного отчета (от раздела 1 до раздела 6)
-    const section1Pattern = /###\s*1[\.\)]?\s*Executive\s+Summary/i;
-    const section6Pattern = /###\s*6[\.\)]?\s*Заключение/i;
-    const section1Match = cleanedReport.match(section1Pattern);
-    const section6Match = cleanedReport.match(section6Pattern);
-    
-    let reportStart = 0;
-    let reportEnd = cleanedReport.length;
-    
-    if (section1Match && section1Match.index !== undefined) {
-      reportStart = section1Match.index;
-    }
-    if (section6Match && section6Match.index !== undefined) {
-      // Находим конец раздела 6
-      const afterSection6 = cleanedReport.substring(section6Match.index);
-      const endMatch = afterSection6.match(/###\s*6[\.\)]?\s*Заключение[\s\S]*?(?=\n###\s*[1-6]|\n##\s+[^#]|\n---|$)/i);
-      if (endMatch) {
-        reportEnd = section6Match.index + endMatch[0].length;
-      }
-    }
-    
-    // Удаляем английские разделы ВНУТРИ отчета (между разделами 1-6)
-    for (const pattern of englishPatterns) {
-      const matches = [...cleanedReport.matchAll(pattern)];
-      for (const match of matches) {
-        if (match.index !== undefined) {
-          // Пропускаем, если это часть правильного отчета (Executive Summary в разделе 1)
-          const beforeMatch = cleanedReport.substring(Math.max(0, match.index - 100), match.index);
-          if (beforeMatch.includes('### 1') || beforeMatch.includes('### 1.')) {
-            continue; // Это правильный раздел
-          }
-          
-          // Удаляем английский раздел, если он внутри отчета (между разделами 1-6)
-          if (match.index >= reportStart && match.index < reportEnd) {
-            // Находим конец английского раздела
-            const afterMatch = cleanedReport.substring(match.index);
-            const endMatch = afterMatch.match(/##\s+[^\n]*\n[\s\S]*?(?=\n###\s*[1-6]|\n##\s+[^#]|\n---|$)/);
-            if (endMatch) {
-              cleanedReport = cleanedReport.substring(0, match.index) + cleanedReport.substring(match.index + endMatch[0].length);
-              // Обновляем границы после удаления
-              reportEnd -= endMatch[0].length;
-            } else {
-              cleanedReport = cleanedReport.substring(0, match.index);
-              reportEnd = match.index;
-            }
-            continue;
-          }
-          
-          // Удаляем английский раздел вне отчета
-          const afterMatch = cleanedReport.substring(match.index);
-          const endMatch = afterMatch.match(/##\s+[^\n]*\n[\s\S]*?(?=\n##|$)/);
-          if (endMatch) {
-            cleanedReport = cleanedReport.substring(0, match.index) + cleanedReport.substring(match.index + endMatch[0].length);
-          } else {
-            cleanedReport = cleanedReport.substring(0, match.index);
-          }
-        }
-      }
-    }
-    
-    // Удаляем раздел "Детальные результаты анализа" и все что ниже
-    const analysisSectionIndex = cleanedReport.indexOf('## 📊 Детальные результаты анализа');
-    if (analysisSectionIndex !== -1) {
-      cleanedReport = cleanedReport.substring(0, analysisSectionIndex);
-    }
-    
-    // Удаляем английские разделы с заголовками типа "Summary of Findings", "Technical Details" и т.д.
-    const englishSectionHeaders = [
-      /##\s*Summary\s+of\s+Findings/gi,
-      /##\s*Technical\s+Details/gi,
-      /##\s*[A-Z][a-z]+\s+Vulnerability/gi,
-      /##\s*[A-Z][a-z]+\s+Bypass/gi,
-      /##\s*[A-Z][a-z]+\s+Access/gi,
-      /##\s*[A-Z][a-z]+\s+Endpoint/gi,
-      /##\s*Vulnerable\s+location/gi,
-      /##\s*Overview/gi,
-      /##\s*Impact/gi,
-      /##\s*Severity/gi,
-      /##\s*Prerequisites/gi,
-      /##\s*Notes/gi
-    ];
-    
-    for (const pattern of englishSectionHeaders) {
-      const matches = [...cleanedReport.matchAll(pattern)];
-      for (const match of matches) {
-        if (match.index !== undefined) {
-          // Проверяем, не является ли это частью правильного отчета
-          const beforeMatch = cleanedReport.substring(Math.max(0, match.index - 200), match.index);
-          if (beforeMatch.includes('### 1') || beforeMatch.includes('### 2') || beforeMatch.includes('### 3') || 
-              beforeMatch.includes('### 4') || beforeMatch.includes('### 5') || beforeMatch.includes('### 6') ||
-              beforeMatch.includes('ПОЛНЫЙ ОТЧЕТ')) {
-            // Это может быть частью правильного отчета, пропускаем
-            continue;
-          }
-          
-          // Удаляем английский раздел до следующего ## или ###
-          const afterMatch = cleanedReport.substring(match.index);
-          const endMatch = afterMatch.match(/##\s+[^\n]*\n[\s\S]*?(?=\n###\s*[1-6]|\n##\s+[^#]|\n---|$)/);
-          if (endMatch) {
-            cleanedReport = cleanedReport.substring(0, match.index) + cleanedReport.substring(match.index + endMatch[0].length);
-          } else {
-            cleanedReport = cleanedReport.substring(0, match.index);
-          }
-        }
-      }
-    }
-    
-    // Удаляем старые разделы 1-4 если они есть (КРАТКИЙ СПИСОК, ДЭШБОРД, ЦЕПОЧКА)
-    const oldSections = [
-      /##?\s*1[\.\)]\s*КРАТКИЙ\s+СПИСОК/gi,
-      /##?\s*2[\.\)]\s*ПОДРОБНЫЙ\s+ДЭШБОРД/gi,
-      /##?\s*3[\.\)]\s*ПОШАГОВАЯ\s+ЦЕПОЧКА/gi
-    ];
-    
-    for (const pattern of oldSections) {
-      const matches = [...cleanedReport.matchAll(pattern)];
-      if (matches.length > 0) {
-        // Удаляем эти разделы
-        for (let i = matches.length - 1; i >= 0; i--) {
-          const match = matches[i];
-          const nextMatch = i < matches.length - 1 ? matches[i + 1] : null;
-          const endIndex = nextMatch ? nextMatch.index : cleanedReport.length;
-          cleanedReport = cleanedReport.substring(0, match.index) + cleanedReport.substring(endIndex);
-        }
-      }
-    }
-    
-    // Удаляем повторы разделов - находим все разделы 1-6 и оставляем только первый цикл
-    const sectionPatterns = [
-      { pattern: /###\s*1[\.\)]?\s*Executive\s+Summary/i, name: 'Executive Summary' },
-      { pattern: /###\s*2[\.\)]?\s*Методология/i, name: 'Методология' },
-      { pattern: /###\s*3[\.\)]?\s*Детальный\s+анализ/i, name: 'Детальный анализ' },
-      { pattern: /###\s*4[\.\)]?\s*Оценка\s+рисков/i, name: 'Оценка рисков' },
-      { pattern: /###\s*5[\.\)]?\s*Рекомендации/i, name: 'Рекомендации' },
-      { pattern: /###\s*6[\.\)]?\s*Заключение/i, name: 'Заключение' }
-    ];
-    
-    // Находим первое вхождение каждого раздела
-    const firstOccurrences = [];
-    for (const section of sectionPatterns) {
-      const match = cleanedReport.match(section.pattern);
-      if (match && match.index !== undefined) {
-        firstOccurrences.push(match.index);
-      }
-    }
-    
-    // Если нашли все разделы, удаляем все что после последнего (Заключение)
-    if (firstOccurrences.length === sectionPatterns.length) {
-      const lastSectionIndex = firstOccurrences[firstOccurrences.length - 1];
-      const lastSectionMatch = cleanedReport.substring(lastSectionIndex).match(sectionPatterns[sectionPatterns.length - 1].pattern);
-      if (lastSectionMatch) {
-        // Находим конец раздела "Заключение"
-        const afterLastSection = cleanedReport.substring(lastSectionIndex + lastSectionMatch[0].length);
-        const endMatch = afterLastSection.match(/[\s\S]*?(?=\n##|$)/);
-        if (endMatch) {
-          const endIndex = lastSectionIndex + lastSectionMatch[0].length + endMatch[0].length;
-          cleanedReport = cleanedReport.substring(0, endIndex);
-        }
-      }
-    }
-    
-    // Убеждаемся, что отчет начинается с "ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА"
-    if (!cleanedReport.match(/^##\s*ПОЛНЫЙ\s+ОТЧЕТ\s+ПО\s+РЕЗУЛЬТАТАМ\s+ПЕНТЕСТА/i)) {
-      // Если не начинается с правильного заголовка, добавляем его
-      const firstSectionMatch = cleanedReport.match(/###\s*1[\.\)]?\s*Executive\s+Summary/i);
-      if (firstSectionMatch && firstSectionMatch.index !== undefined) {
-        cleanedReport = '## ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА\n\n' + cleanedReport.substring(firstSectionMatch.index);
-      }
-    }
-    
-    cleanedReport = cleanedReport.trim();
-    
-    return cleanedReport + '\n\n---\n\n*Отчет сгенерирован с использованием Claude AI на основе анализа всех файлов результатов пентеста.*';
+    // Очищаем ответ от лишних разделов - применяем функцию очистки
+    return cleanReportFromEnglishSections(attackChain);
   } catch (error) {
-    console.error(`   ❌ Ошибка при генерации через AI: ${error.message}`);
+    console.error('   ❌ Ошибка при генерации через AI:', error.message);
     console.log('   ⚠️  Использую простую генерацию без AI');
-    return generateAttackChainSimple(content, targetUrl);
+    const fallbackResult = generateAttackChainSimple(content, targetUrl);
+    // Применяем очистку и к fallback результату
+    return cleanReportFromEnglishSections(fallbackResult);
   }
 }
 
