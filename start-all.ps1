@@ -19,3 +19,4 @@ Write-Host "Нажмите любую клавишу для выхода..." -Fo
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 
 
+

@@ -2,8 +2,8 @@ import { Pentest, PentestLog } from '../types/pentest';
 import { pentestService } from './pentest.service';
 import { EventEmitter } from 'events';
 import { spawn, ChildProcess } from 'child_process';
-import { join, resolve } from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { join, resolve, normalize } from 'path';
+import { existsSync, mkdirSync, readdirSync, statSync } from 'fs';
 
 /**
  * Сервис для интеграции с Shannon
@@ -87,30 +87,164 @@ class ShannonService extends EventEmitter {
   }
 
   /**
+   * Проверить доступность целевого URL
+   */
+  private async checkTargetAccessibility(url: string): Promise<boolean> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд таймаут
+      
+      const response = await fetch(url, {
+        method: 'HEAD',
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      return response.ok || response.status < 500;
+    } catch (error: any) {
+      return false;
+    }
+  }
+
+  /**
+   * Проверить, не является ли путь самопроверкой (Xaker платформа)
+   */
+  private isSelfScanPath(path: string): boolean {
+    const normalizedPath = normalize(path).toLowerCase();
+    const projectRoot = normalize(process.cwd()).toLowerCase();
+    
+    // Проверяем, не указывает ли путь на сам проект Xaker
+    if (normalizedPath.includes(projectRoot)) {
+      // Разрешаем только папку pentests внутри проекта
+      if (normalizedPath.includes(join(projectRoot, 'pentests').toLowerCase())) {
+        return false; // Это изолированная папка пентеста - OK
+      }
+      // Проверяем, не содержит ли путь backend или frontend
+      if (normalizedPath.includes('backend') || normalizedPath.includes('frontend')) {
+        return true; // Это самопроверка!
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * Проверить, пуста ли папка scope (только служебные файлы)
+   */
+  private isScopeEmpty(scopePath: string): boolean {
+    try {
+      if (!existsSync(scopePath)) {
+        return true;
+      }
+      
+      const files = readdirSync(scopePath);
+      // Игнорируем служебные файлы и папки
+      const codeFiles = files.filter(f => {
+        const fullPath = join(scopePath, f);
+        const stat = statSync(fullPath);
+        
+        // Игнорируем скрытые файлы/папки, .git, README.md
+        if (f.startsWith('.') || f === 'README.md' || f === '.gitignore') {
+          return false;
+        }
+        
+        // Если это папка, проверяем её содержимое
+        if (stat.isDirectory()) {
+          try {
+            const dirFiles = readdirSync(fullPath);
+            return dirFiles.length > 0;
+          } catch {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+      
+      return codeFiles.length === 0;
+    } catch (error) {
+      return true; // Если ошибка - считаем пустой
+    }
+  }
+
+  /**
    * Выполнить Shannon
    */
   private async executeShannon(pentestId: string, config: Pentest['config']): Promise<void> {
     pentestService.addLog(pentestId, 'info', '🚀 Начинается РЕАЛЬНЫЙ пентест через Shannon...');
     pentestService.addLog(pentestId, 'info', `🎯 Цель: ${config.targetUrl}`);
+    
+    // Проверяем доступность целевого URL
+    pentestService.addLog(pentestId, 'info', '🔍 Проверяю доступность целевого URL...');
+    const isAccessible = await this.checkTargetAccessibility(config.targetUrl);
+    
+    if (!isAccessible) {
+      pentestService.addLog(pentestId, 'error', `❌ Целевой URL недоступен: ${config.targetUrl}`);
+      pentestService.addLog(pentestId, 'info', '📝 Формирую отчет о недоступности цели...');
+      
+      // Формируем отчет о недоступности
+      await this.generateUnreachableReport(pentestId, config);
+      
+      pentestService.updatePentestStatus(pentestId, 'completed');
+      pentestService.addLog(pentestId, 'success', '✅ Отчет о недоступности цели сформирован');
+      return;
+    }
+    
+    pentestService.addLog(pentestId, 'info', '✅ Целевой URL доступен');
     pentestService.addLog(pentestId, 'warn', '💰 ВНИМАНИЕ: Используется реальный Claude API (~$50)');
 
     // Для работы Shannon нужен путь к репозиторию
-    // Создаем ОТДЕЛЬНУЮ папку для каждого пентеста
+    // ВАЖНО: Если не указан явный путь к исходному коду, используем изолированную папку
+    // чтобы Shannon не анализировал код платформы Xaker
     const pentestsDir = join(process.cwd(), 'pentests');
     const pentestDir = join(pentestsDir, pentestId);
-    const repoPath = config.scope?.[0] || pentestDir;
+    let repoPath = config.scope?.[0] || pentestDir;
     
-    // Создаем отдельную папку для этого пентеста
+    // Проверяем защиту от самопроверки
+    if (config.scope && config.scope.length > 0) {
+      const scopePath = normalize(config.scope[0]);
+      
+      if (this.isSelfScanPath(scopePath)) {
+        pentestService.addLog(pentestId, 'error', `❌ ОШИБКА: Указанный путь указывает на код платформы Xaker: ${scopePath}`);
+        pentestService.addLog(pentestId, 'error', '❌ Самопроверка запрещена для безопасности');
+        pentestService.addLog(pentestId, 'info', '📝 Использую изолированную папку вместо указанного пути');
+        repoPath = pentestDir;
+      } else {
+        // Проверяем, не пуста ли папка scope
+        if (this.isScopeEmpty(scopePath)) {
+          pentestService.addLog(pentestId, 'warn', `⚠️  Папка scope пуста или содержит только служебные файлы: ${scopePath}`);
+          pentestService.addLog(pentestId, 'info', '📝 White-box анализ будет пропущен, используется только black-box тестирование');
+        } else {
+          pentestService.addLog(pentestId, 'info', `✅ Папка scope содержит исходный код: ${scopePath}`);
+        }
+      }
+    }
+    
+    // Создаем изолированную папку для этого пентеста
     if (repoPath === pentestDir) {
       if (!existsSync(pentestsDir)) {
         mkdirSync(pentestsDir, { recursive: true });
       }
       if (!existsSync(pentestDir)) {
-        pentestService.addLog(pentestId, 'info', `📁 Создаю отдельную папку для пентеста: ${pentestDir}`);
+        pentestService.addLog(pentestId, 'info', `📁 Создаю изолированную папку для пентеста: ${pentestDir}`);
         mkdirSync(pentestDir, { recursive: true });
         // Создаем минимальный .git репозиторий для Shannon
         mkdirSync(join(pentestDir, '.git'), { recursive: true });
+        // Создаем README.md чтобы папка не была полностью пустой
+        // Это предотвратит поиск кода в родительских директориях
+        const fs = require('fs');
+        fs.writeFileSync(
+          join(pentestDir, 'README.md'),
+          `# Pentest Target: ${config.targetUrl}\n\nThis directory is used for pentest analysis.\nSource code analysis will be performed on the target URL only.\n`
+        );
         pentestService.addLog(pentestId, 'info', `✅ Папка создана: ${pentestDir}`);
+        pentestService.addLog(pentestId, 'warn', `⚠️  ВНИМАНИЕ: Исходный код целевого приложения не предоставлен.`);
+        pentestService.addLog(pentestId, 'warn', `⚠️  Shannon Lite предназначен для white-box анализа и требует исходный код.`);
+        pentestService.addLog(pentestId, 'warn', `⚠️  Без исходного кода Shannon может анализировать неправильный репозиторий (например, код платформы Xaker).`);
+        pentestService.addLog(pentestId, 'warn', `⚠️  Рекомендуется: предоставить исходный код целевого приложения через параметр scope в конфигурации.`);
       } else {
         pentestService.addLog(pentestId, 'info', `📁 Использую существующую папку: ${pentestDir}`);
       }
@@ -119,6 +253,7 @@ class ShannonService extends EventEmitter {
     const apiKey = process.env.ANTHROPIC_API_KEY!;
 
     // Собираем аргументы для Shannon
+    // ВАЖНО: Передаем изолированную папку, чтобы Shannon не искал код в C:\Xaker\
     const args = [
       config.targetUrl,
       repoPath,
@@ -262,6 +397,51 @@ class ShannonService extends EventEmitter {
       await new Promise(resolve => setTimeout(resolve, duration / steps.length));
       pentestService.addLog(pentestId, 'info', `  ${step}`);
     }
+  }
+
+  /**
+   * Сгенерировать отчет о недоступности цели
+   */
+  private async generateUnreachableReport(pentestId: string, config: Pentest['config']): Promise<void> {
+    const pentestDir = join(process.cwd(), 'pentests', pentestId);
+    const deliverablesDir = join(pentestDir, 'deliverables');
+    
+    if (!existsSync(deliverablesDir)) {
+      mkdirSync(deliverablesDir, { recursive: true });
+    }
+    
+    const reportPath = join(deliverablesDir, 'unreachable_target_report.md');
+    const fs = require('fs');
+    
+    const report = `# Отчет о недоступности целевого URL
+
+## Целевой URL
+**URL:** ${config.targetUrl}
+
+## Статус
+❌ **НЕДОСТУПЕН**
+
+## Описание проблемы
+Целевой URL не отвечает на HTTP/HTTPS запросы. Возможные причины:
+
+1. Сервер не запущен или недоступен
+2. Неправильный URL или опечатка
+3. Блокировка доступа (firewall, DDoS protection)
+4. Временная недоступность сервера
+5. Требуется аутентификация для доступа
+
+## Рекомендации
+1. Проверьте правильность URL
+2. Убедитесь, что сервер запущен и доступен
+3. Проверьте сетевые настройки и firewall
+4. Попробуйте открыть URL в браузере
+
+## Дата проверки
+${new Date().toISOString()}
+`;
+
+    fs.writeFileSync(reportPath, report);
+    pentestService.addLog(pentestId, 'info', `📄 Отчет сохранен: ${reportPath}`);
   }
 }
 

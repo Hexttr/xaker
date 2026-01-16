@@ -4,7 +4,7 @@ import { pentestApi, Pentest, CreatePentestRequest } from '../services/api';
 import LogViewer from '../components/LogViewer';
 import StatusBar from '../components/StatusBar';
 import VulnerabilitiesList from '../components/VulnerabilitiesList';
-import { FiPlus, FiPlay, FiSquare, FiTrash2, FiChevronDown, FiChevronUp, FiClock, FiTarget, FiAlertCircle, FiShield } from 'react-icons/fi';
+import { FiPlus, FiPlay, FiSquare, FiTrash2, FiChevronDown, FiChevronUp, FiClock, FiTarget, FiAlertCircle, FiShield, FiFileText } from 'react-icons/fi';
 
 // Компонент для отображения отдельного пентеста
 function PentestItem({
@@ -56,6 +56,23 @@ function PentestItem({
   });
 
   const currentStatus = statusData?.status || '⚙️ Выполнение пентеста...';
+
+  const handleGenerateReport = async () => {
+    try {
+      const blob = await pentestApi.generatePdfReport(pentest.id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `pentest-report-${pentest.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Ошибка при генерации PDF:', error);
+      alert('Ошибка при генерации PDF отчета');
+    }
+  };
 
   return (
     <div className="p-4 md:p-6 hover:bg-gray-800 transition-colors duration-200 border-l-4 border-l-transparent hover:border-l-green-500">
@@ -128,6 +145,15 @@ function PentestItem({
               </>
             )}
           </button>
+          {pentest.status === 'completed' && (
+            <button
+              onClick={handleGenerateReport}
+              className="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 flex-1 md:flex-initial shadow-md hover:shadow-lg"
+            >
+              <FiFileText className="w-4 h-4" />
+              Отчет
+            </button>
+          )}
           <button
             onClick={onDelete}
             disabled={deletePending}

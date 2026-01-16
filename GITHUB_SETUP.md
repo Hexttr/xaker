@@ -96,3 +96,4 @@ cd xaker
 - ❌ `backend/temp-repo/` - временные файлы (в .gitignore)
 
 
+

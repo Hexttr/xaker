@@ -51,6 +51,12 @@ export const pentestApi = {
   getLogs: (id: string) => api.get(`/pentests/${id}/logs`),
   getStatus: (id: string) => api.get<{ status: string }>(`/pentests/${id}/status`),
   getVulnerabilities: (id: string) => api.get<Vulnerability[]>(`/pentests/${id}/vulnerabilities`),
+  generatePdfReport: async (id: string): Promise<Blob> => {
+    const response = await api.get(`/pentests/${id}/generate-pdf`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };
 
 export default api;

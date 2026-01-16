@@ -73,3 +73,4 @@ Get-Process node | Stop-Process -Force
 - Если порты заняты, измените их в `.env` и `vite.config.ts`
 
 
+

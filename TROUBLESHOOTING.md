@@ -69,3 +69,4 @@ taskkill /PID <PID> /F
 4. Убедитесь, что файл `backend/.env` существует
 
 
+
