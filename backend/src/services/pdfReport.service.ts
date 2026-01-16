@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
 import { marked } from 'marked';
 import puppeteer from 'puppeteer';
 import { pentestService } from './pentest.service';
+import Anthropic from '@anthropic-ai/sdk';
 
 /**
  * Сервис для генерации PDF отчетов
@@ -70,6 +71,8 @@ class PdfReportService {
     }
 
     // Генерируем отчет с промптом для цепочки взлома
+    const attackChain = await this.generateAttackChain(allContent, pentest.targetUrl, deliverablesDir);
+    
     const report = `# 🛡️ Отчет о пентесте: ${pentest.targetUrl}
 
 **AI Penetration Testing Platform | Pentest.red**
@@ -92,7 +95,7 @@ class PdfReportService {
 
 ## 🎯 Детальная цепочка взлома (Attack Chain)
 
-${this.generateAttackChain(allContent, pentest.targetUrl)}
+${attackChain}
 
 ---
 
@@ -120,8 +123,101 @@ ${allContent}
 
   /**
    * Генерировать детальную цепочку взлома из содержимого отчетов
+   * Использует AI (Claude) для создания максимально подробной цепочки взлома
    */
-  private generateAttackChain(content: string, targetUrl: string): string {
+  private async generateAttackChain(content: string, targetUrl: string, deliverablesDir: string): Promise<string> {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    
+    // Если есть API ключ, используем AI для генерации детальной цепочки
+    if (apiKey && apiKey !== 'your_api_key_here') {
+      try {
+        return await this.generateAttackChainWithAI(content, targetUrl, deliverablesDir, apiKey);
+      } catch (error) {
+        console.error('Ошибка при генерации цепочки взлома через AI:', error);
+        // Fallback на простой парсинг
+      }
+    }
+    
+    // Fallback: простой парсинг без AI
+    return this.generateAttackChainSimple(content, targetUrl);
+  }
+
+  /**
+   * Генерировать детальную цепочку взлома с использованием Claude AI
+   */
+  private async generateAttackChainWithAI(
+    content: string,
+    targetUrl: string,
+    deliverablesDir: string,
+    apiKey: string
+  ): Promise<string> {
+    // Читаем все файлы для контекста
+    const files = this.getAllReportFiles(deliverablesDir);
+    let allFilesContent = '';
+    for (const file of files) {
+      try {
+        const fileContent = readFileSync(file.path, 'utf-8');
+        allFilesContent += `\n\n=== ${file.name} ===\n\n${fileContent}\n\n`;
+      } catch (error) {
+        // Игнорируем ошибки чтения
+      }
+    }
+
+    const prompt = `Ты эксперт по кибербезопасности и пентестингу. Проанализируй все предоставленные файлы с результатами пентеста и создай МАКСИМАЛЬНО ПОДРОБНУЮ цепочку взлома (attack chain) для сервиса ${targetUrl}.
+
+ТРЕБОВАНИЯ:
+1. Создай пошаговую цепочку взлома, описывающую КАК ИМЕННО можно взломать этот сервис
+2. Каждый шаг должен быть максимально подробным с конкретными командами, URL, payloads
+3. Включи все найденные уязвимости в логическую последовательность атаки
+4. Для каждой уязвимости предоставь:
+   - Детальное описание как её эксплуатировать
+   - Конкретные команды/запросы для эксплуатации
+   - Proof-of-concept примеры
+   - Как эта уязвимость связана с другими в цепочке
+5. Опиши полный путь от начальной разведки до полного компрометирования системы
+6. Используй формат Markdown с четкой структурой
+
+ФАЙЛЫ С РЕЗУЛЬТАТАМИ ПЕНТЕСТА:
+${allFilesContent.substring(0, 200000)} // Ограничиваем размер для API
+
+Создай детальную цепочку взлома в формате Markdown.`;
+
+    try {
+      const anthropic = new Anthropic({
+        apiKey: apiKey,
+      });
+
+      const message = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 8000,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+      });
+
+      const attackChain = message.content[0].type === 'text' ? message.content[0].text : '';
+
+      return `### 🎯 Детальная цепочка взлома (Attack Chain)
+
+${attackChain}
+
+---
+
+*Цепочка взлома сгенерирована с использованием Claude AI на основе анализа всех файлов результатов пентеста.*
+`;
+    } catch (error: any) {
+      console.error('Ошибка при вызове Claude API:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Простая генерация цепочки взлома без AI (fallback)
+   */
+  private generateAttackChainSimple(content: string, targetUrl: string): string {
     // Извлекаем информацию об уязвимостях и создаем цепочку
     const vulnerabilities = this.extractVulnerabilities(content);
     
