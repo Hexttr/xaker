@@ -280,6 +280,24 @@ ${detailedAnalysis}
       this.log(`   → Пытаюсь использовать Claude AI для генерации отчета`);
     }
     
+    // Проверяем, использовать ли MiroMind
+    const shouldUseMiroMind = this.useMiroMind && this.miromindService?.isServiceAvailable();
+    
+    if (shouldUseMiroMind) {
+      try {
+        this.log(`🧠 [AI REPORT] Использую MiroMind для генерации отчета`);
+        const aiReport = await this.generateAttackChainWithMiroMind(content, targetUrl, deliverablesDir);
+        this.log(`✅ [AI REPORT] MiroMind успешно сгенерировал отчет`);
+        this.log(`   📏 Длина отчета: ${aiReport.length} символов (${Math.round(aiReport.length / 1000)}K)`);
+        this.log(`   📊 Приблизительно слов: ${aiReport.split(/\s+/).length}`);
+        return aiReport;
+      } catch (error: any) {
+        this.logError(`\n❌ [AI REPORT] ОШИБКА при генерации отчета через MiroMind:`, error);
+        this.logWarn(`\n⚠️  [AI REPORT] Переключаюсь на Claude API...`);
+        // Fallback на Claude
+      }
+    }
+    
     // Если есть API ключ, используем AI для генерации детальной цепочки
     if (apiKey && apiKey !== 'your_api_key_here') {
       try {
