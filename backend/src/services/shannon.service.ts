@@ -123,8 +123,21 @@ class ShannonService extends EventEmitter {
       if (normalizedPath.includes(join(projectRoot, 'pentests').toLowerCase())) {
         return false; // Это изолированная папка пентеста - OK
       }
-      // Проверяем, не содержит ли путь backend или frontend
-      if (normalizedPath.includes('backend') || normalizedPath.includes('frontend')) {
+      // Проверяем, не содержит ли путь backend, frontend, или корневую папку проекта
+      if (normalizedPath.includes('backend') || 
+          normalizedPath.includes('frontend') || 
+          normalizedPath === projectRoot ||
+          normalizedPath.startsWith(join(projectRoot, 'src').toLowerCase()) ||
+          normalizedPath.startsWith(join(projectRoot, 'node_modules').toLowerCase()) ||
+          normalizedPath.includes('xaker') && (normalizedPath.includes('backend') || normalizedPath.includes('frontend'))) {
+        return true; // Это самопроверка!
+      }
+    }
+    
+    // Дополнительная проверка: если путь содержит известные папки проекта Xaker
+    const xakerPaths = ['backend/src', 'frontend/src', 'backend/services', 'backend/routes'];
+    for (const xakerPath of xakerPaths) {
+      if (normalizedPath.includes(xakerPath.toLowerCase())) {
         return true; // Это самопроверка!
       }
     }
