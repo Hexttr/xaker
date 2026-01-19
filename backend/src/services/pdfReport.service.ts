@@ -281,9 +281,16 @@ ${detailedAnalysis}
     }
     
     // Проверяем, использовать ли MiroMind
+    this.log(`\n🔍 [AI REPORT] Проверка MiroMind:`);
+    this.log(`   USE_MIROMIND из env: ${process.env.USE_MIROMIND}`);
+    this.log(`   this.useMiroMind: ${this.useMiroMind}`);
+    this.log(`   this.miromindService существует: ${!!this.miromindService}`);
+    
     const miromindAvailable = this.useMiroMind && this.miromindService 
       ? await this.miromindService.isServiceAvailable() 
       : false;
+    
+    this.log(`   miromindAvailable: ${miromindAvailable}`);
     
     if (miromindAvailable) {
       try {
