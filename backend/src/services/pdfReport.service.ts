@@ -4,6 +4,7 @@ import { marked } from 'marked';
 import puppeteer from 'puppeteer';
 import { pentestService } from './pentest.service';
 import { query } from '@anthropic-ai/claude-agent-sdk';
+import { MiroMindService } from './miromind.service';
 
 /**
  * Сервис для генерации PDF отчетов
@@ -12,6 +13,8 @@ class PdfReportService {
   private readonly REPORTS_DIR = join(process.cwd(), 'reports');
   private readonly LOGS_DIR = join(process.cwd(), 'report-logs');
   private currentLogs: string[] = [];
+  private useMiroMind: boolean = false;
+  private miromindService: MiroMindService | null = null;
 
   constructor() {
     // Создаем директорию для отчетов, если её нет
@@ -22,6 +25,18 @@ class PdfReportService {
     // Создаем директорию для логов
     if (!existsSync(this.LOGS_DIR)) {
       mkdirSync(this.LOGS_DIR, { recursive: true });
+    }
+    
+    // Проверяем, нужно ли использовать MiroMind
+    this.useMiroMind = process.env.USE_MIROMIND === 'true';
+    if (this.useMiroMind) {
+      try {
+        this.miromindService = new MiroMindService();
+        console.log('✅ MiroMind активирован для генерации отчетов');
+      } catch (error) {
+        console.warn('⚠️  Не удалось инициализировать MiroMind:', error);
+        this.useMiroMind = false;
+      }
     }
   }
 
@@ -55,6 +70,7 @@ class PdfReportService {
     this.currentLogs.push(logMessage);
     console.warn(message);
   }
+
 
   /**
    * Сохранить логи в файл
@@ -290,6 +306,123 @@ ${detailedAnalysis}
   }
 
   /**
+   * Генерировать отчет через MiroMind
+   */
+  private async generateAttackChainWithMiroMind(
+    content: string,
+    targetUrl: string,
+    deliverablesDir: string
+  ): Promise<string> {
+    if (!this.miromindService) {
+      throw new Error('MiroMind сервис не инициализирован');
+    }
+
+    this.log(`🧠 [AI REPORT] Использую MiroMind для генерации отчета`);
+    
+    // Читаем все файлы для контекста
+    const files = this.getAllReportFiles(deliverablesDir);
+    let allFilesContent = '';
+    for (const file of files) {
+      try {
+        const fileContent = readFileSync(file.path, 'utf-8');
+        allFilesContent += `\n\n=== ${file.name} ===\n\n${fileContent}\n\n`;
+      } catch (error) {
+        // Игнорируем ошибки чтения
+      }
+    }
+
+    const prompt = `Ты эксперт по кибербезопасности и пентестингу. Проанализируй все предоставленные файлы с результатами пентеста и создай КРАТКИЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА для сервиса ${targetUrl}.
+
+🚨🚨🚨 КРИТИЧЕСКИ ВАЖНО - СТРОГОЕ ОГРАНИЧЕНИЕ ОБЪЕМА 🚨🚨🚨
+1. ОТЧЕТ ДОЛЖЕН БЫТЬ КРАТКИМ НА 10-15 ЛИСТОВ (НЕ БОЛЕЕ 3000 СЛОВ, НЕ БОЛЕЕ 15000 СИМВОЛОВ)
+2. НИ В КОЕМ СЛУЧАЕ НЕ копируй фрагменты файлов, команды, код или длинные тексты из файлов в итоговый отчет
+3. Анализируй файлы, но описывай результаты СВОИМИ СЛОВАМИ, КРАТКО (2-3 предложения)
+4. Включай только КРИТИЧЕСКИЕ и ВЫСОКИЕ уязвимости (средние и низкие ПРОПУСКАЙ)
+5. Каждое описание - МАКСИМУМ 2-3 предложения, не больше
+6. НЕ дублируй информацию между разделами
+7. Убирай ВСЕ лишние детали, технические подробности, коды, команды - оставляй только СУТЬ
+8. Если отчет получается больше 15000 символов - ОБРЕЖЬ его до этого размера
+
+КРИТИЧЕСКИ ВАЖНЫЕ ТРЕБОВАНИЯ:
+1. ВСЕ РАЗДЕЛЫ ОТЧЕТА ДОЛЖНЫ БЫТЬ НАПИСАНЫ НА РУССКОМ ЯЗЫКЕ
+
+СТРУКТУРА ОТЧЕТА (создай ТОЛЬКО эти 6 разделов, БЕЗ ПОВТОРОВ):
+
+### 1. Executive Summary (Краткое резюме)
+   - Краткое описание проведенного пентеста
+   - Общая оценка уровня безопасности сервиса
+   - Ключевые выводы и рекомендации
+   - Критичность найденных уязвимостей (общая статистика)
+
+### 2. Методология тестирования
+   - Описание использованной методологии
+   - Объем и глубина тестирования
+   - Инструменты и технологии
+   - Временные рамки проведения пентеста
+
+### 3. Детальный анализ найденных уязвимостей
+   Для КАЖДОЙ критической/высокой уязвимости предоставь КРАТКО (ВСЕ НА РУССКОМ ЯЗЫКЕ, МАКСИМУМ 2-3 ПРЕДЛОЖЕНИЯ НА ПУНКТ):
+   - **Название уязвимости** (кратко, можно указать английское название в скобках)
+   - **Критичность** (КРИТИЧЕСКАЯ/ВЫСОКАЯ или CRITICAL/HIGH - включай только их)
+   - **Расположение** (коротко - URL или эндпоинт)
+   - **Краткое описание** (1-2 предложения - что не так и почему это проблема) - ТОЛЬКО НА РУССКОМ
+   - **Бизнес-влияние** (1 предложение - какой ущерб) - ТОЛЬКО НА РУССКОМ
+   - **Рекомендации** (1-2 предложения - как исправить) - ТОЛЬКО НА РУССКОМ
+   
+   ВАЖНО: Включай только критические и высокие уязвимости. Средние и низкие пропускай для краткости отчета.
+
+### 4. Оценка рисков
+   - Общая оценка рисков для бизнеса - НА РУССКОМ
+   - Приоритизация уязвимостей по бизнес-критичности - НА РУССКОМ
+   - Потенциальный ущерб от эксплуатации уязвимостей - НА РУССКОМ
+   - Временные рамки для исправления критических уязвимостей - НА РУССКОМ
+
+### 5. Рекомендации и план действий
+   - Общие рекомендации по улучшению безопасности - НА РУССКОМ
+   - План действий по устранению уязвимостей (приоритизированный) - НА РУССКОМ
+   - Рекомендации по долгосрочному улучшению безопасности - НА РУССКОМ
+   - Best practices для предотвращения подобных уязвимостей - НА РУССКОМ
+
+### 6. Заключение
+   - Общие выводы по результатам пентеста - НА РУССКОМ
+   - Оценка текущего состояния безопасности - НА РУССКОМ
+   - Рекомендации по дальнейшему мониторингу - НА РУССКОМ
+
+ФАЙЛЫ С РЕЗУЛЬТАТАМИ ПЕНТЕСТА (используй только для анализа, НЕ копируй в отчет):
+${allFilesContent.substring(0, 50000)}
+
+💡 НАПОМИНАНИЕ О КРАТКОСТИ:
+- Отчет должен быть на 10-15 листов (не более 3000-4000 слов)
+- Включай только критические/высокие уязвимости
+- Каждое описание - максимум 2-3 предложения
+- НЕ копируй фрагменты файлов - анализируй и кратко пересказывай своими словами
+- Фокусируйся на самом важном - что нужно исправить в первую очередь`;
+
+    try {
+      const requestStartTime = Date.now();
+      this.log(`🚀 [AI REPORT] Отправляю запрос к MiroMind...`);
+      this.log(`   Размер промпта: ${prompt.length} символов`);
+      
+      const fullResponse = await this.miromindService.generateText(prompt, 8192);
+      
+      const requestDuration = Date.now() - requestStartTime;
+      this.log(`\n📊 [AI REPORT] Запрос завершен:`);
+      this.log(`   ⏱️  Время выполнения: ${requestDuration}ms (${Math.round(requestDuration / 1000)} сек)`);
+      this.log(`   📏 Длина ответа: ${fullResponse.length} символов (${Math.round(fullResponse.length / 1000)}K)`);
+      
+      // Очищаем ответ от лишних разделов
+      this.log(`\n🧹 [AI REPORT] Применяю очистку от английских разделов...`);
+      const cleaned = this.cleanReportFromEnglishSections(fullResponse);
+      this.log(`   📏 До очистки: ${fullResponse.length} символов, после: ${cleaned.length} символов`);
+      
+      return cleaned;
+    } catch (error: any) {
+      this.logError(`\n❌ [AI REPORT] Ошибка при генерации отчета через MiroMind:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Генерировать детальную цепочку взлома с использованием Claude AI
    */
   private async generateAttackChainWithAI(
@@ -449,9 +582,38 @@ ${allFilesContent.substring(0, 50000)}
       
       try {
         // Используем query из Claude Agent SDK (как в Shannon)
+        // Настраиваем опции для query с улучшенным логированием
+        const envVars: any = {
+          ...process.env,
+          ANTHROPIC_API_KEY: apiKey,
+        };
+        
+        // ВАЖНО: Всегда добавляем прокси (для доступа из РФ нужен VPN)
+        envVars.HTTP_PROXY = proxyUrl;
+        envVars.HTTPS_PROXY = proxyUrl;
+        envVars.http_proxy = proxyUrl;
+        envVars.https_proxy = proxyUrl;
+        
+        this.log(`   ✅ Прокси добавлен в env для дочернего процесса Claude Code`);
+        this.log(`   ⚙️  Настройки запроса:`);
+        this.log(`      Модель: claude-3-5-sonnet-20241022`);
+        this.log(`      MaxTurns: 5`);
+        this.log(`      Прокси: ${proxyUrl || 'не используется'}`);
+        this.log(`      Размер промпта: ${prompt.length} символов`);
+        
+        const options: any = {
+          apiKey: apiKey,
+          model: 'claude-3-5-sonnet-20241022',
+          maxTurns: 5,
+          cwd: deliverablesDir,
+          permissionMode: 'bypassPermissions' as const,
+          env: envVars,
+        };
+        
         let fullResponse = '';
         let result: string | null = null;
         let messageCount = 0;
+        const requestStartTime = Date.now();
         
         this.log(`\n🚀 [AI REPORT] Отправляю запрос к Claude AI для генерации отчета...`);
         this.log(`   Модель: ${options.model}`);
@@ -460,65 +622,115 @@ ${allFilesContent.substring(0, 50000)}
         this.log(`   API ключ: ${apiKey ? `${apiKey.substring(0, 15)}...${apiKey.substring(apiKey.length - 4)}` : 'НЕ УСТАНОВЛЕН'}`);
         this.log(`   Рабочая директория: ${options.cwd}`);
         this.log(`   Размер промпта: ${prompt.length} символов`);
-        const requestStartTime = Date.now();
-        for await (const message of query({ prompt, options })) {
-          messageCount++;
-          
-          // Обрабатываем сообщение типа 'result' - это финальный результат (как в Shannon)
-          if (message.type === 'result') {
-            const resultMessage = message as any;
-            // В Shannon результат берется из resultMessage.result
-            if (resultMessage.result && typeof resultMessage.result === 'string') {
-              // Добавляем к накопленному ответу, а не заменяем
-              if (fullResponse && !fullResponse.includes(resultMessage.result)) {
-                fullResponse += '\n\n' + resultMessage.result;
-              } else if (!fullResponse) {
-                fullResponse = resultMessage.result;
-              }
-              result = fullResponse;
-              this.log(`✅ Получен финальный результат из result.result (${resultMessage.result.length} символов, всего: ${fullResponse.length})`);
-            } else if (resultMessage.content) {
-              if (typeof resultMessage.content === 'string') {
-                if (fullResponse && !fullResponse.includes(resultMessage.content)) {
-                  fullResponse += '\n\n' + resultMessage.content;
+        this.log(`   🔍 Начинаю итерацию по сообщениям от Claude Code...`);
+        
+        try {
+          for await (const message of query({ prompt, options })) {
+            messageCount++;
+            this.log(`   📨 Сообщение #${messageCount}, тип: ${message.type}`);
+            
+            // Обрабатываем сообщение типа 'result' - это финальный результат
+            if (message.type === 'result') {
+              const resultMessage = message as any;
+              this.log(`   ✅ Получено сообщение типа 'result'`);
+              this.log(`   🔍 Детали result сообщения: ${JSON.stringify(resultMessage).substring(0, 500)}`);
+              
+              if (resultMessage.result && typeof resultMessage.result === 'string') {
+                if (fullResponse && !fullResponse.includes(resultMessage.result)) {
+                  fullResponse += '\n\n' + resultMessage.result;
                 } else if (!fullResponse) {
-                  fullResponse = resultMessage.content;
+                  fullResponse = resultMessage.result;
                 }
                 result = fullResponse;
-                this.log(`✅ Получен результат из result.content (${resultMessage.content.length} символов, всего: ${fullResponse.length})`);
-              }
-            } else if (resultMessage.text) {
-              if (fullResponse && !fullResponse.includes(resultMessage.text)) {
-                fullResponse += '\n\n' + resultMessage.text;
-              } else if (!fullResponse) {
-                fullResponse = resultMessage.text;
-              }
-              result = fullResponse;
-              this.log(`✅ Получен результат из result.text (${resultMessage.text.length} символов, всего: ${fullResponse.length})`);
-            }
-          } else if (message.type === 'assistant') {
-            // В Shannon также собираем из assistant сообщений - ВАЖНО: собираем ВСЕ сообщения
-            const assistantMsg = message as any;
-            if (assistantMsg.message && assistantMsg.message.content) {
-              const content = Array.isArray(assistantMsg.message.content)
-                ? assistantMsg.message.content.map((c: any) => c.text || JSON.stringify(c)).join('\n')
-                : String(assistantMsg.message.content);
-              if (content && typeof content === 'string' && content.trim().length > 0) {
-                // Добавляем к накопленному ответу
-                fullResponse += content + '\n\n';
-                this.log(`✅ Получен текст из assistant.message.content (${content.length} символов, всего: ${fullResponse.length})`);
-              }
-            } else if (assistantMsg.content && Array.isArray(assistantMsg.content)) {
-              for (const content of assistantMsg.content) {
-                if (content.type === 'text' && content.text && content.text.trim().length > 0) {
-                  fullResponse += content.text + '\n\n';
-                  this.log(`✅ Получен текст из assistant.content[] (${content.text.length} символов, всего: ${fullResponse.length})`);
+                this.log(`   ✅ Получен финальный результат из result.result (${resultMessage.result.length} символов, всего: ${fullResponse.length})`);
+                this.log(`   📝 Первые 200 символов результата: ${resultMessage.result.substring(0, 200)}`);
+              } else if (resultMessage.content) {
+                if (typeof resultMessage.content === 'string') {
+                  if (fullResponse && !fullResponse.includes(resultMessage.content)) {
+                    fullResponse += '\n\n' + resultMessage.content;
+                  } else if (!fullResponse) {
+                    fullResponse = resultMessage.content;
+                  }
+                  result = fullResponse;
+                  this.log(`   ✅ Получен результат из result.content (${resultMessage.content.length} символов, всего: ${fullResponse.length})`);
+                  this.log(`   📝 Первые 200 символов результата: ${resultMessage.content.substring(0, 200)}`);
                 }
+              } else if (resultMessage.text) {
+                if (fullResponse && !fullResponse.includes(resultMessage.text)) {
+                  fullResponse += '\n\n' + resultMessage.text;
+                } else if (!fullResponse) {
+                  fullResponse = resultMessage.text;
+                }
+                result = fullResponse;
+                this.log(`   ✅ Получен результат из result.text (${resultMessage.text.length} символов, всего: ${fullResponse.length})`);
+                this.log(`   📝 Первые 200 символов результата: ${resultMessage.text.substring(0, 200)}`);
+              } else {
+                this.logWarn(`   ⚠️  Сообщение 'result' не содержит result/content/text`);
+                this.logWarn(`   🔍 Ключи resultMessage: ${JSON.stringify(Object.keys(resultMessage))}`);
+                this.logWarn(`   🔍 Полное содержимое: ${JSON.stringify(resultMessage).substring(0, 1000)}`);
               }
+            } else if (message.type === 'assistant') {
+              // Собираем из assistant сообщений
+              const assistantMsg = message as any;
+              this.log(`   ✅ Получено сообщение типа 'assistant'`);
+              this.log(`   🔍 Детали assistant сообщения: ${JSON.stringify(assistantMsg).substring(0, 500)}`);
+              
+              if (assistantMsg.message && assistantMsg.message.content) {
+                const content = Array.isArray(assistantMsg.message.content)
+                  ? assistantMsg.message.content.map((c: any) => c.text || JSON.stringify(c)).join('\n')
+                  : String(assistantMsg.message.content);
+                if (content && typeof content === 'string' && content.trim().length > 0) {
+                  fullResponse += content + '\n\n';
+                  this.log(`   ✅ Получен текст из assistant.message.content (${content.length} символов, всего: ${fullResponse.length})`);
+                  this.log(`   📝 Первые 200 символов: ${content.substring(0, 200)}`);
+                }
+              } else if (assistantMsg.content && Array.isArray(assistantMsg.content)) {
+                for (const content of assistantMsg.content) {
+                  if (content.type === 'text' && content.text && content.text.trim().length > 0) {
+                    fullResponse += content.text + '\n\n';
+                    this.log(`   ✅ Получен текст из assistant.content[] (${content.text.length} символов, всего: ${fullResponse.length})`);
+                    this.log(`   📝 Первые 200 символов: ${content.text.substring(0, 200)}`);
+                  }
+                }
+              } else {
+                this.logWarn(`   ⚠️  Сообщение 'assistant' не содержит message/content`);
+                this.logWarn(`   🔍 Ключи assistantMsg: ${JSON.stringify(Object.keys(assistantMsg))}`);
+                this.logWarn(`   🔍 Полное содержимое: ${JSON.stringify(assistantMsg).substring(0, 1000)}`);
+              }
+            } else if (message.type === 'system') {
+              this.log(`   ℹ️  Получено системное сообщение: ${JSON.stringify(message).substring(0, 100)}...`);
+            } else {
+              // Логируем другие типы сообщений для диагностики
+              this.log(`   📨 Получено сообщение типа: ${message.type}, содержимое: ${JSON.stringify(message).substring(0, 200)}`);
+            }
+          }
+          } catch (queryError: any) {
+          this.logError(`\n❌ [AI REPORT] Ошибка при итерации по сообщениям:`);
+          this.logError(`   Тип: ${queryError?.constructor?.name || 'Unknown'}`);
+          this.logError(`   Сообщение: ${queryError?.message || String(queryError)}`);
+          this.logError(`   Stack: ${queryError?.stack || 'Нет stack trace'}`);
+          
+          // Дополнительная диагностика для ошибки "process exited with code 1"
+          if (queryError?.message?.includes('exited with code')) {
+            this.logError(`\n🔍 [AI REPORT] ДЕТАЛЬНАЯ ДИАГНОСТИКА ошибки "process exited with code":`);
+            this.logError(`   1. Проверка прокси: ${proxyUrl}`);
+            this.logError(`   2. Проверка API ключа: ${apiKey ? 'Установлен' : 'НЕ УСТАНОВЛЕН'}`);
+            this.logError(`   3. Размер промпта: ${prompt.length} символов`);
+            this.logError(`   4. Модель: ${options.model}`);
+            this.logError(`   5. MaxTurns: ${options.maxTurns}`);
+            this.logError(`   6. Получено сообщений до ошибки: ${messageCount}`);
+            this.logError(`   7. Накопленный ответ: ${fullResponse.length} символов`);
+            
+            // Если получили хотя бы часть ответа, используем её
+            if (fullResponse && fullResponse.trim().length > 0) {
+              this.logWarn(`\n⚠️  [AI REPORT] Процесс упал, но получена часть ответа (${fullResponse.length} символов)`);
+              this.logWarn(`   Использую полученную часть ответа...`);
+              result = fullResponse;
+            } else {
+              throw queryError;
             }
           } else {
-            // Логируем другие типы сообщений для диагностики
-            this.log(`📨 Получено сообщение типа: ${message.type}`);
+            throw queryError;
           }
         }
         
@@ -529,12 +741,6 @@ ${allFilesContent.substring(0, 50000)}
         this.log(`   📏 Длина полного ответа: ${fullResponse.length} символов (${Math.round(fullResponse.length / 1000)}K)`);
         this.log(`   📝 Приблизительно слов: ${fullResponse.split(/\s+/).length}`);
         this.log(`   💾 Использован result: ${result ? 'Да' : 'Нет'}`);
-        
-        // Восстанавливаем оригинальные значения прокси
-        if (originalHttpProxy) process.env.HTTP_PROXY = originalHttpProxy;
-        else delete process.env.HTTP_PROXY;
-        if (originalHttpsProxy) process.env.HTTPS_PROXY = originalHttpsProxy;
-        else delete process.env.HTTPS_PROXY;
 
         // Детальное логирование полученного контента
         this.log(`\n📋 [AI REPORT] Анализ полученного контента:`);
@@ -598,7 +804,7 @@ ${allFilesContent.substring(0, 50000)}
         return cleaned;
       } catch (queryError: any) {
         // Восстанавливаем оригинальные значения прокси при ошибке
-        this.logError(`\n❌ [AI REPORT] Ошибка при выполнении query():`, queryError);
+        this.logError(`\n❌ [AI REPORT] Ошибка при выполнении запроса к Claude API:`, queryError);
         
         if (originalHttpProxy) process.env.HTTP_PROXY = originalHttpProxy;
         else delete process.env.HTTP_PROXY;
@@ -1021,11 +1227,10 @@ ${allContent.substring(0, 100000)}
 
       const options: any = {
         apiKey: apiKey,
-        model: 'claude-sonnet-4-5-20250929',
-        maxTurns: 30,
+        model: 'claude-3-5-sonnet-20241022',
+        maxTurns: 5,
         cwd: deliverablesDir,
         permissionMode: 'bypassPermissions' as const,
-        // Передаем прокси в env для дочернего процесса Claude Code
         env: {
           ...process.env,
           HTTP_PROXY: proxyUrl,
@@ -1041,24 +1246,46 @@ ${allContent.substring(0, 100000)}
       let messageCount = 0;
       const chainStartTime = Date.now();
       
-      for await (const message of query({ prompt, options })) {
-        messageCount++;
-        if (message.type === 'result') {
-          const resultMessage = message as any;
-          if (resultMessage.result && typeof resultMessage.result === 'string') {
-            fullResponse = resultMessage.result;
-            result = fullResponse;
+      console.log(`   🔍 Начинаю итерацию по сообщениям от Claude Code для цепочки взлома...`);
+      
+      try {
+        for await (const message of query({ prompt, options })) {
+          messageCount++;
+          if (messageCount % 5 === 0) {
+            console.log(`   📨 Получено сообщений: ${messageCount}`);
           }
-        } else if (message.type === 'assistant') {
-          const assistantMsg = message as any;
-          if (assistantMsg.message && assistantMsg.message.content) {
-            const content = Array.isArray(assistantMsg.message.content)
-              ? assistantMsg.message.content.map((c: any) => c.text || JSON.stringify(c)).join('\n')
-              : String(assistantMsg.message.content);
-            if (content && typeof content === 'string' && content.trim().length > 0) {
-              fullResponse += content + '\n\n';
+          
+          if (message.type === 'result') {
+            const resultMessage = message as any;
+            if (resultMessage.result && typeof resultMessage.result === 'string') {
+              fullResponse = resultMessage.result;
+              result = fullResponse;
+              console.log(`   ✅ Получен финальный результат (${resultMessage.result.length} символов)`);
+            }
+          } else if (message.type === 'assistant') {
+            const assistantMsg = message as any;
+            if (assistantMsg.message && assistantMsg.message.content) {
+              const content = Array.isArray(assistantMsg.message.content)
+                ? assistantMsg.message.content.map((c: any) => c.text || JSON.stringify(c)).join('\n')
+                : String(assistantMsg.message.content);
+              if (content && typeof content === 'string' && content.trim().length > 0) {
+                fullResponse += content + '\n\n';
+              }
             }
           }
+        }
+      } catch (queryError: any) {
+        console.error(`   ❌ Ошибка при итерации: ${queryError?.message || String(queryError)}`);
+        if (queryError?.message?.includes('exited with code')) {
+          console.error(`   🔍 Процесс упал с кодом выхода. Получено сообщений: ${messageCount}, накоплено: ${fullResponse.length} символов`);
+          if (fullResponse && fullResponse.trim().length > 0) {
+            console.warn(`   ⚠️  Использую полученную часть ответа (${fullResponse.length} символов)`);
+            result = fullResponse;
+          } else {
+            throw queryError;
+          }
+        } else {
+          throw queryError;
         }
       }
       
@@ -1163,11 +1390,10 @@ ${allContent.substring(0, 100000)}
 
       const options: any = {
         apiKey: apiKey,
-        model: 'claude-sonnet-4-5-20250929',
-        maxTurns: 30,
+        model: 'claude-3-5-sonnet-20241022',
+        maxTurns: 5,
         cwd: deliverablesDir,
         permissionMode: 'bypassPermissions' as const,
-        // Передаем прокси в env для дочернего процесса Claude Code
         env: {
           ...process.env,
           HTTP_PROXY: proxyUrl,
@@ -1181,25 +1407,48 @@ ${allContent.substring(0, 100000)}
       let fullResponse = '';
       let result: string | null = null;
       let messageCount = 0;
+      const analysisStartTime = Date.now();
       
-      for await (const message of query({ prompt, options })) {
-        messageCount++;
-        if (message.type === 'result') {
-          const resultMessage = message as any;
-          if (resultMessage.result && typeof resultMessage.result === 'string') {
-            fullResponse = resultMessage.result;
-            result = fullResponse;
+      console.log(`   🔍 Начинаю итерацию по сообщениям от Claude Code для детального анализа...`);
+      
+      try {
+        for await (const message of query({ prompt, options })) {
+          messageCount++;
+          if (messageCount % 5 === 0) {
+            console.log(`   📨 Получено сообщений: ${messageCount}`);
           }
-        } else if (message.type === 'assistant') {
-          const assistantMsg = message as any;
-          if (assistantMsg.message && assistantMsg.message.content) {
-            const content = Array.isArray(assistantMsg.message.content)
-              ? assistantMsg.message.content.map((c: any) => c.text || JSON.stringify(c)).join('\n')
-              : String(assistantMsg.message.content);
-            if (content && typeof content === 'string' && content.trim().length > 0) {
-              fullResponse += content + '\n\n';
+          
+          if (message.type === 'result') {
+            const resultMessage = message as any;
+            if (resultMessage.result && typeof resultMessage.result === 'string') {
+              fullResponse = resultMessage.result;
+              result = fullResponse;
+              console.log(`   ✅ Получен финальный результат (${resultMessage.result.length} символов)`);
+            }
+          } else if (message.type === 'assistant') {
+            const assistantMsg = message as any;
+            if (assistantMsg.message && assistantMsg.message.content) {
+              const content = Array.isArray(assistantMsg.message.content)
+                ? assistantMsg.message.content.map((c: any) => c.text || JSON.stringify(c)).join('\n')
+                : String(assistantMsg.message.content);
+              if (content && typeof content === 'string' && content.trim().length > 0) {
+                fullResponse += content + '\n\n';
+              }
             }
           }
+        }
+      } catch (queryError: any) {
+        console.error(`   ❌ Ошибка при итерации: ${queryError?.message || String(queryError)}`);
+        if (queryError?.message?.includes('exited with code')) {
+          console.error(`   🔍 Процесс упал с кодом выхода. Получено сообщений: ${messageCount}, накоплено: ${fullResponse.length} символов`);
+          if (fullResponse && fullResponse.trim().length > 0) {
+            console.warn(`   ⚠️  Использую полученную часть ответа (${fullResponse.length} символов)`);
+            result = fullResponse;
+          } else {
+            throw queryError;
+          }
+        } else {
+          throw queryError;
         }
       }
       
