@@ -58,6 +58,9 @@ backend/temp-repo/
 # Generated PDF reports
 backend/reports/
 
+# Report generation logs
+backend/report-logs/
+
 # Windows system files
 nul
 

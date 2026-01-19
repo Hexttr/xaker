@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'fs';
 import { marked } from 'marked';
 import puppeteer from 'puppeteer';
 import { pentestService } from './pentest.service';
@@ -10,6 +10,8 @@ import { query } from '@anthropic-ai/claude-agent-sdk';
  */
 class PdfReportService {
   private readonly REPORTS_DIR = join(process.cwd(), 'reports');
+  private readonly LOGS_DIR = join(process.cwd(), 'report-logs');
+  private currentLogs: string[] = [];
 
   constructor() {
     // Создаем директорию для отчетов, если её нет
@@ -17,35 +19,106 @@ class PdfReportService {
       const fs = require('fs');
       fs.mkdirSync(this.REPORTS_DIR, { recursive: true });
     }
+    // Создаем директорию для логов
+    if (!existsSync(this.LOGS_DIR)) {
+      mkdirSync(this.LOGS_DIR, { recursive: true });
+    }
+  }
+
+  /**
+   * Логирование с сохранением в массив для последующей записи в файл
+   */
+  private log(message: string): void {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] ${message}`;
+    this.currentLogs.push(logMessage);
+    console.log(message);
+  }
+
+  private logError(message: string, error?: any): void {
+    const timestamp = new Date().toISOString();
+    let errorMessage = `[${timestamp}] ❌ ${message}`;
+    if (error) {
+      errorMessage += `\n   Тип: ${error?.constructor?.name || 'Unknown'}`;
+      errorMessage += `\n   Сообщение: ${error?.message || String(error)}`;
+      if (error?.stack) {
+        errorMessage += `\n   Stack: ${error.stack.split('\n').slice(0, 5).join('\n')}`;
+      }
+    }
+    this.currentLogs.push(errorMessage);
+    console.error(message, error);
+  }
+
+  private logWarn(message: string): void {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] ⚠️  ${message}`;
+    this.currentLogs.push(logMessage);
+    console.warn(message);
+  }
+
+  /**
+   * Сохранить логи в файл
+   */
+  private saveLogsToFile(pentestId: string): string {
+    const filename = `report-generation-${pentestId}-${Date.now()}.log`;
+    const filepath = join(this.LOGS_DIR, filename);
+    const content = this.currentLogs.join('\n');
+    writeFileSync(filepath, content, 'utf-8');
+    return filepath;
+  }
+
+  /**
+   * Очистить логи для нового отчета
+   */
+  private clearLogs(): void {
+    this.currentLogs = [];
   }
 
   /**
    * Сгенерировать PDF отчет для пентеста
    */
   async generatePdfReport(pentestId: string): Promise<string> {
-    const pentest = pentestService.getPentest(pentestId);
-    if (!pentest) {
-      throw new Error('Пентест не найден');
+    // Очищаем логи для нового отчета
+    this.clearLogs();
+    this.log(`\n${'='.repeat(80)}`);
+    this.log(`🚀 [PDF REPORT] Начало генерации PDF отчета для пентеста ${pentestId}`);
+    this.log(`${'='.repeat(80)}\n`);
+
+    try {
+      const pentest = pentestService.getPentest(pentestId);
+      if (!pentest) {
+        throw new Error('Пентест не найден');
+      }
+
+      // Путь к папке с результатами пентеста
+      const pentestDir = join(process.cwd(), 'pentests', pentestId);
+      const deliverablesDir = join(pentestDir, 'deliverables');
+
+      if (!existsSync(deliverablesDir)) {
+        throw new Error('Папка с результатами пентеста не найдена');
+      }
+
+      // Генерируем Markdown отчет с промптом
+      const markdownReport = await this.generateMarkdownReport(pentestId, pentest, deliverablesDir);
+
+      // Конвертируем Markdown в HTML
+      const htmlReport = await this.markdownToHtml(markdownReport, pentest);
+
+      // Конвертируем HTML в PDF
+      const pdfPath = await this.htmlToPdf(htmlReport, pentestId);
+
+      // Сохраняем логи в файл
+      const logPath = this.saveLogsToFile(pentestId);
+      this.log(`\n✅ [PDF REPORT] PDF отчет успешно сгенерирован: ${pdfPath}`);
+      this.log(`📋 [PDF REPORT] Логи сохранены в: ${logPath}`);
+
+      return pdfPath;
+    } catch (error: any) {
+      this.logError('Критическая ошибка при генерации PDF отчета', error);
+      const logPath = this.saveLogsToFile(pentestId);
+      this.log(`📋 [PDF REPORT] Логи ошибки сохранены в: ${logPath}`);
+      throw error;
     }
-
-    // Путь к папке с результатами пентеста
-    const pentestDir = join(process.cwd(), 'pentests', pentestId);
-    const deliverablesDir = join(pentestDir, 'deliverables');
-
-    if (!existsSync(deliverablesDir)) {
-      throw new Error('Папка с результатами пентеста не найдена');
-    }
-
-    // Генерируем Markdown отчет с промптом
-    const markdownReport = await this.generateMarkdownReport(pentestId, pentest, deliverablesDir);
-
-    // Конвертируем Markdown в HTML
-    const htmlReport = await this.markdownToHtml(markdownReport, pentest);
-
-    // Конвертируем HTML в PDF
-    const pdfPath = await this.htmlToPdf(htmlReport, pentestId);
-
-    return pdfPath;
   }
 
   /**
@@ -56,8 +129,18 @@ class PdfReportService {
     pentest: any,
     deliverablesDir: string
   ): Promise<string> {
+    this.log(`\n${'='.repeat(80)}`);
+    this.log(`📝 [GENERATE REPORT] Начало генерации Markdown отчета для пентеста ${pentestId}`);
+    this.log(`   Цель: ${pentest.targetUrl}`);
+    this.log(`   Папка deliverables: ${deliverablesDir}`);
+    this.log(`${'='.repeat(80)}\n`);
+    
     // Читаем все файлы из deliverables
     const files = this.getAllReportFiles(deliverablesDir);
+    this.log(`📂 [GENERATE REPORT] Найдено файлов для анализа: ${files.length}`);
+    if (files.length > 0) {
+      this.log(`   Файлы: ${files.map(f => f.name).join(', ')}`);
+    }
 
     // Читаем содержимое всех отчетов
     let allContent = '';
@@ -65,16 +148,39 @@ class PdfReportService {
       try {
         const content = readFileSync(file.path, 'utf-8');
         allContent += `\n\n## ${file.name}\n\n${content}\n\n`;
+        this.log(`   ✅ Прочитан файл: ${file.name} (${content.length} символов)`);
       } catch (error) {
-        console.error(`Ошибка чтения файла ${file.path}:`, error);
+        this.logError(`   ❌ Ошибка чтения файла ${file.path}`, error);
       }
     }
+    this.log(`📊 [GENERATE REPORT] Общий размер контента для анализа: ${allContent.length} символов`);
 
     // Генерируем отчет с новым промптом
+    this.log(`\n🚀 [GENERATE REPORT] Начинаю генерацию основного AI-отчета через generateAttackChain...`);
+    const startTime = Date.now();
     let aiReport = await this.generateAttackChain(allContent, pentest.targetUrl, deliverablesDir);
+    const duration = Date.now() - startTime;
+    this.log(`   ⏱️  Время генерации: ${duration}ms`);
+    this.log(`   📏 Размер сгенерированного AI-отчета: ${aiReport.length} символов (${Math.round(aiReport.length / 1000)}K)`);
     
     // Применяем очистку к результату независимо от источника (AI или fallback)
+    this.log(`\n🧹 [GENERATE REPORT] Применяю очистку от английских разделов...`);
+    const beforeCleanLength = aiReport.length;
     aiReport = this.cleanReportFromEnglishSections(aiReport);
+    this.log(`   📏 До очистки: ${beforeCleanLength} символов, после: ${aiReport.length} символов`);
+    
+    // Генерируем цепочку взлома и детальный анализ
+    this.log(`\n🔗 [GENERATE REPORT] Генерирую раздел "Цепочка взлома"...`);
+    const attackChainStartTime = Date.now();
+    const attackChain = await this.generateAttackChainSection(allContent, pentest.targetUrl, deliverablesDir);
+    this.log(`   ⏱️  Время генерации цепочки: ${Date.now() - attackChainStartTime}ms`);
+    this.log(`   📏 Размер цепочки взлома: ${attackChain.length} символов`);
+    
+    this.log(`\n📊 [GENERATE REPORT] Генерирую раздел "Детальный анализ"...`);
+    const analysisStartTime = Date.now();
+    const detailedAnalysis = await this.generateDetailedAnalysis(allContent, pentest.targetUrl, deliverablesDir);
+    this.log(`   ⏱️  Время генерации анализа: ${Date.now() - analysisStartTime}ms`);
+    this.log(`   📏 Размер детального анализа: ${detailedAnalysis.length} символов`);
     
     const report = `# 🛡️ Отчет о пентесте: ${pentest.targetUrl}
 
@@ -96,7 +202,19 @@ class PdfReportService {
 
 ---
 
+## 🔗 Цепочка взлома
+
+${attackChain}
+
+---
+
 ${aiReport}
+
+---
+
+## 📊 Детальные результаты анализа
+
+${detailedAnalysis}
 
 ---
 
@@ -114,7 +232,12 @@ ${aiReport}
 `;
 
     // ВАЖНО: Применяем очистку ко всему финальному отчету для удаления английских разделов
-    return this.cleanFinalReport(report);
+    this.log(`\n🧹 [GENERATE REPORT] Применяю финальную очистку отчета...`);
+    const beforeFinalCleanLength = report.length;
+    const finalReport = this.cleanFinalReport(report);
+    this.log(`   📏 До финальной очистки: ${beforeFinalCleanLength} символов, после: ${finalReport.length} символов`);
+    this.log(`\n✅ [GENERATE REPORT] Markdown отчет сгенерирован успешно!\n`);
+    return finalReport;
   }
 
   /**
@@ -122,20 +245,48 @@ ${aiReport}
    * Использует AI (Claude) для создания максимально подробной цепочки взлома
    */
   private async generateAttackChain(content: string, targetUrl: string, deliverablesDir: string): Promise<string> {
+    this.log(`\n${'─'.repeat(80)}`);
+    this.log(`🤖 [AI REPORT] Начало генерации основного отчета через Claude AI`);
+    this.log(`${'─'.repeat(80)}`);
+    
     const apiKey = process.env.ANTHROPIC_API_KEY;
+    
+    // Логируем проверку API ключа
+    if (!apiKey) {
+      this.logWarn(`⚠️  [AI REPORT] ANTHROPIC_API_KEY не найден в process.env`);
+      this.logWarn(`   → Переключаюсь на fallback режим (простой список уязвимостей)`);
+    } else if (apiKey === 'your_api_key_here') {
+      this.logWarn(`⚠️  [AI REPORT] ANTHROPIC_API_KEY имеет значение по умолчанию: "${apiKey}"`);
+      this.logWarn(`   → Переключаюсь на fallback режим (простой список уязвимостей)`);
+    } else {
+      this.log(`✅ [AI REPORT] ANTHROPIC_API_KEY найден (длина: ${apiKey.length} символов)`);
+      this.log(`   Префикс ключа: ${apiKey.substring(0, 10)}...`);
+      this.log(`   → Пытаюсь использовать Claude AI для генерации отчета`);
+    }
     
     // Если есть API ключ, используем AI для генерации детальной цепочки
     if (apiKey && apiKey !== 'your_api_key_here') {
       try {
-        return await this.generateAttackChainWithAI(content, targetUrl, deliverablesDir, apiKey);
-      } catch (error) {
-        console.error('Ошибка при генерации цепочки взлома через AI:', error);
+        this.log(`🚀 [AI REPORT] Вызываю generateAttackChainWithAI()...`);
+        const aiReport = await this.generateAttackChainWithAI(content, targetUrl, deliverablesDir, apiKey);
+        this.log(`✅ [AI REPORT] Claude AI успешно сгенерировал отчет`);
+        this.log(`   📏 Длина отчета: ${aiReport.length} символов (${Math.round(aiReport.length / 1000)}K)`);
+        this.log(`   📊 Приблизительно слов: ${aiReport.split(/\s+/).length}`);
+        return aiReport;
+      } catch (error: any) {
+        this.logError(`\n❌ [AI REPORT] ОШИБКА при генерации отчета через Claude AI:`, error);
+        this.logWarn(`\n⚠️  [AI REPORT] Переключаюсь на fallback режим (простой список уязвимостей)`);
         // Fallback на простой парсинг
       }
+    } else {
+      this.logWarn(`⚠️  [AI REPORT] Claude AI не используется - нет валидного API ключа`);
     }
     
     // Fallback: простой парсинг без AI
-    return this.generateAttackChainSimple(content, targetUrl);
+    this.log(`\n📋 [AI REPORT] Использую fallback режим - простой список уязвимостей`);
+    const fallbackResult = this.generateAttackChainSimple(content, targetUrl);
+    this.log(`   📏 Размер fallback отчета: ${fallbackResult.length} символов`);
+    return fallbackResult;
   }
 
   /**
@@ -159,7 +310,17 @@ ${aiReport}
       }
     }
 
-    const prompt = `Ты эксперт по кибербезопасности и пентестингу. Проанализируй все предоставленные файлы с результатами пентеста и создай ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА для сервиса ${targetUrl}.
+    const prompt = `Ты эксперт по кибербезопасности и пентестингу. Проанализируй все предоставленные файлы с результатами пентеста и создай КРАТКИЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА для сервиса ${targetUrl}.
+
+🚨🚨🚨 КРИТИЧЕСКИ ВАЖНО - СТРОГОЕ ОГРАНИЧЕНИЕ ОБЪЕМА 🚨🚨🚨
+1. ОТЧЕТ ДОЛЖЕН БЫТЬ КРАТКИМ НА 10-15 ЛИСТОВ (НЕ БОЛЕЕ 3000 СЛОВ, НЕ БОЛЕЕ 15000 СИМВОЛОВ)
+2. НИ В КОЕМ СЛУЧАЕ НЕ копируй фрагменты файлов, команды, код или длинные тексты из файлов в итоговый отчет
+3. Анализируй файлы, но описывай результаты СВОИМИ СЛОВАМИ, КРАТКО (2-3 предложения)
+4. Включай только КРИТИЧЕСКИЕ и ВЫСОКИЕ уязвимости (средние и низкие ПРОПУСКАЙ)
+5. Каждое описание - МАКСИМУМ 2-3 предложения, не больше
+6. НЕ дублируй информацию между разделами
+7. Убирай ВСЕ лишние детали, технические подробности, коды, команды - оставляй только СУТЬ
+8. Если отчет получается больше 15000 символов - ОБРЕЖЬ его до этого размера
 
 КРИТИЧЕСКИ ВАЖНЫЕ ТРЕБОВАНИЯ:
 1. ВСЕ РАЗДЕЛЫ ОТЧЕТА ДОЛЖНЫ БЫТЬ НАПИСАНЫ НА РУССКОМ ЯЗЫКЕ
@@ -180,15 +341,15 @@ ${aiReport}
    - Временные рамки проведения пентеста
 
 ### 3. Детальный анализ найденных уязвимостей
-   Для КАЖДОЙ найденной уязвимости предоставь (ВСЕ НА РУССКОМ ЯЗЫКЕ):
-   - **Название уязвимости** (четкое и понятное на русском, можно указать английское название в скобках, например: "Обход CAPTCHA (Cloudflare Turnstile Bypass)")
-   - **Критичность** (КРИТИЧЕСКАЯ/ВЫСОКАЯ/СРЕДНЯЯ/НИЗКАЯ или CRITICAL/HIGH/MEDIUM/LOW)
-   - **Расположение** (URL, эндпоинт, компонент) - описание на русском
-   - **Детальное описание** (что именно не так, почему это проблема) - ТОЛЬКО НА РУССКОМ
-   - **Техническое описание** (как воспроизвести, proof-of-concept) - описание на русском, команды/код могут быть на английском
-   - **Бизнес-влияние** (какой ущерб может быть нанесен) - ТОЛЬКО НА РУССКОМ
-   - **Рекомендации по исправлению** (конкретные шаги для устранения) - ТОЛЬКО НА РУССКОМ
-   - **Оценка сложности исправления** (простая/средняя/сложная)
+   Для КАЖДОЙ критической/высокой уязвимости предоставь КРАТКО (ВСЕ НА РУССКОМ ЯЗЫКЕ, МАКСИМУМ 2-3 ПРЕДЛОЖЕНИЯ НА ПУНКТ):
+   - **Название уязвимости** (кратко, можно указать английское название в скобках)
+   - **Критичность** (КРИТИЧЕСКАЯ/ВЫСОКАЯ или CRITICAL/HIGH - включай только их)
+   - **Расположение** (коротко - URL или эндпоинт)
+   - **Краткое описание** (1-2 предложения - что не так и почему это проблема) - ТОЛЬКО НА РУССКОМ
+   - **Бизнес-влияние** (1 предложение - какой ущерб) - ТОЛЬКО НА РУССКОМ
+   - **Рекомендации** (1-2 предложения - как исправить) - ТОЛЬКО НА РУССКОМ
+   
+   ВАЖНО: Включай только критические и высокие уязвимости. Средние и низкие пропускай для краткости отчета.
 
 ### 4. Оценка рисков
    - Общая оценка рисков для бизнеса - НА РУССКОМ
@@ -208,23 +369,69 @@ ${aiReport}
    - Рекомендации по дальнейшему мониторингу - НА РУССКОМ
 
 
-ФАЙЛЫ С РЕЗУЛЬТАТАМИ ПЕНТЕСТА:
-${allFilesContent.substring(0, 200000)}
+ФАЙЛЫ С РЕЗУЛЬТАТАМИ ПЕНТЕСТА (используй только для анализа, НЕ копируй в отчет):
+${allFilesContent.substring(0, 50000)}
 
-ВАЖНО: Не копируй фрагменты файлов которые ты анализировал в итоговый отчет. Я хочу получить краткий отчет на русском языке на 10-15 листов с самым важным анализом.`;
+💡 НАПОМИНАНИЕ О КРАТКОСТИ:
+- Отчет должен быть на 10-15 листов (не более 3000-4000 слов)
+- Включай только критические/высокие уязвимости
+- Каждое описание - максимум 2-3 предложения
+- НЕ копируй фрагменты файлов - анализируй и кратко пересказывай своими словами
+- Фокусируйся на самом важном - что нужно исправить в первую очередь`;
 
     try {
       // Настраиваем прокси для VPN (как в Shannon)
-      const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || process.env.http_proxy || process.env.https_proxy || 'http://127.0.0.1:12334';
+      // ВАЖНО: Для доступа к Claude из РФ нужен VPN/прокси
+      let proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || process.env.http_proxy || process.env.https_proxy;
+      
+      this.log(`\n🌐 [AI REPORT] Настройка прокси для VPN:`);
+      this.log(`   HTTP_PROXY: ${process.env.HTTP_PROXY || 'не установлен'}`);
+      this.log(`   HTTPS_PROXY: ${process.env.HTTPS_PROXY || 'не установлен'}`);
+      this.log(`   http_proxy: ${process.env.http_proxy || 'не установлен'}`);
+      this.log(`   https_proxy: ${process.env.https_proxy || 'не установлен'}`);
+      
+      // Если прокси не установлен в переменных окружения, используем системный прокси по умолчанию
+      // (как в shannon.service.ts - многие VPN используют локальный прокси на 127.0.0.1:12334)
+      if (!proxyUrl) {
+        const systemProxy = 'http://127.0.0.1:12334';
+        proxyUrl = systemProxy;
+        this.log(`   ℹ️  Прокси не установлен в переменных окружения`);
+        this.log(`   → Использую системный прокси по умолчанию: ${systemProxy}`);
+        this.log(`   💡 Если VPN не работает, установите HTTP_PROXY/HTTPS_PROXY в .env файле`);
+      } else {
+        this.log(`   → Используется прокси из переменных окружения: ${proxyUrl}`);
+      }
       
       // Опции для query (как в Shannon)
+      // ВАЖНО: Упрощаем запрос - используем меньше maxTurns и более простую модель
+      const envVars: any = {
+        ...process.env,
+        ANTHROPIC_API_KEY: apiKey,
+      };
+      
+      // ВАЖНО: Всегда добавляем прокси (для доступа из РФ нужен VPN)
+      // Это критично для работы Claude API из России
+      envVars.HTTP_PROXY = proxyUrl;
+      envVars.HTTPS_PROXY = proxyUrl;
+      envVars.http_proxy = proxyUrl;
+      envVars.https_proxy = proxyUrl;
+      
+      this.log(`   ✅ Прокси добавлен в env для дочернего процесса Claude Code`);
+      
       const options: any = {
         apiKey: apiKey,
-        model: 'claude-sonnet-4-5-20250929', // Используем ту же модель, что и Shannon
-        maxTurns: 50, // Ограничиваем количество поворотов для генерации отчета
+        model: 'claude-3-5-sonnet-20241022', // Используем более стабильную модель
+        maxTurns: 5, // Еще больше уменьшаем для стабильности
         cwd: deliverablesDir, // Рабочая директория
         permissionMode: 'bypassPermissions' as const, // Обходим проверки разрешений
+        env: envVars,
       };
+      
+      this.log(`   ⚙️  Настройки запроса:`);
+      this.log(`      Модель: ${options.model}`);
+      this.log(`      MaxTurns: ${options.maxTurns}`);
+      this.log(`      Прокси: ${proxyUrl || 'не используется'}`);
+      this.log(`      Размер промпта: ${prompt.length} символов`);
 
       // Устанавливаем прокси для VPN (как в Shannon)
       const originalHttpProxy = process.env.HTTP_PROXY;
@@ -233,6 +440,11 @@ ${allFilesContent.substring(0, 200000)}
       if (proxyUrl) {
         process.env.HTTP_PROXY = proxyUrl;
         process.env.HTTPS_PROXY = proxyUrl;
+        this.log(`✅ Установлены переменные окружения для прокси:`);
+        this.log(`   HTTP_PROXY = ${process.env.HTTP_PROXY}`);
+        this.log(`   HTTPS_PROXY = ${process.env.HTTPS_PROXY}`);
+      } else {
+        this.logWarn('⚠️ Прокси не настроен - запросы к Claude API могут не работать через VPN');
       }
       
       try {
@@ -241,7 +453,14 @@ ${allFilesContent.substring(0, 200000)}
         let result: string | null = null;
         let messageCount = 0;
         
-        console.log('Отправляю запрос к Claude AI для генерации отчета...');
+        this.log(`\n🚀 [AI REPORT] Отправляю запрос к Claude AI для генерации отчета...`);
+        this.log(`   Модель: ${options.model}`);
+        this.log(`   Макс. поворотов: ${options.maxTurns}`);
+        this.log(`   Прокси: ${proxyUrl}`);
+        this.log(`   API ключ: ${apiKey ? `${apiKey.substring(0, 15)}...${apiKey.substring(apiKey.length - 4)}` : 'НЕ УСТАНОВЛЕН'}`);
+        this.log(`   Рабочая директория: ${options.cwd}`);
+        this.log(`   Размер промпта: ${prompt.length} символов`);
+        const requestStartTime = Date.now();
         for await (const message of query({ prompt, options })) {
           messageCount++;
           
@@ -257,7 +476,7 @@ ${allFilesContent.substring(0, 200000)}
                 fullResponse = resultMessage.result;
               }
               result = fullResponse;
-              console.log(`✅ Получен финальный результат из result.result (${resultMessage.result.length} символов, всего: ${fullResponse.length})`);
+              this.log(`✅ Получен финальный результат из result.result (${resultMessage.result.length} символов, всего: ${fullResponse.length})`);
             } else if (resultMessage.content) {
               if (typeof resultMessage.content === 'string') {
                 if (fullResponse && !fullResponse.includes(resultMessage.content)) {
@@ -266,7 +485,7 @@ ${allFilesContent.substring(0, 200000)}
                   fullResponse = resultMessage.content;
                 }
                 result = fullResponse;
-                console.log(`✅ Получен результат из result.content (${resultMessage.content.length} символов, всего: ${fullResponse.length})`);
+                this.log(`✅ Получен результат из result.content (${resultMessage.content.length} символов, всего: ${fullResponse.length})`);
               }
             } else if (resultMessage.text) {
               if (fullResponse && !fullResponse.includes(resultMessage.text)) {
@@ -275,7 +494,7 @@ ${allFilesContent.substring(0, 200000)}
                 fullResponse = resultMessage.text;
               }
               result = fullResponse;
-              console.log(`✅ Получен результат из result.text (${resultMessage.text.length} символов, всего: ${fullResponse.length})`);
+              this.log(`✅ Получен результат из result.text (${resultMessage.text.length} символов, всего: ${fullResponse.length})`);
             }
           } else if (message.type === 'assistant') {
             // В Shannon также собираем из assistant сообщений - ВАЖНО: собираем ВСЕ сообщения
@@ -287,42 +506,118 @@ ${allFilesContent.substring(0, 200000)}
               if (content && typeof content === 'string' && content.trim().length > 0) {
                 // Добавляем к накопленному ответу
                 fullResponse += content + '\n\n';
-                console.log(`✅ Получен текст из assistant.message.content (${content.length} символов, всего: ${fullResponse.length})`);
+                this.log(`✅ Получен текст из assistant.message.content (${content.length} символов, всего: ${fullResponse.length})`);
               }
             } else if (assistantMsg.content && Array.isArray(assistantMsg.content)) {
               for (const content of assistantMsg.content) {
                 if (content.type === 'text' && content.text && content.text.trim().length > 0) {
                   fullResponse += content.text + '\n\n';
-                  console.log(`✅ Получен текст из assistant.content[] (${content.text.length} символов, всего: ${fullResponse.length})`);
+                  this.log(`✅ Получен текст из assistant.content[] (${content.text.length} символов, всего: ${fullResponse.length})`);
                 }
               }
             }
+          } else {
+            // Логируем другие типы сообщений для диагностики
+            this.log(`📨 Получено сообщение типа: ${message.type}`);
           }
         }
         
-        console.log(`Всего сообщений: ${messageCount}, Длина ответа: ${fullResponse.length}`);
-
+        const requestDuration = Date.now() - requestStartTime;
+        this.log(`\n📊 [AI REPORT] Запрос завершен:`);
+        this.log(`   ⏱️  Время выполнения: ${requestDuration}ms (${Math.round(requestDuration / 1000)} сек)`);
+        this.log(`   📨 Всего получено сообщений: ${messageCount}`);
+        this.log(`   📏 Длина полного ответа: ${fullResponse.length} символов (${Math.round(fullResponse.length / 1000)}K)`);
+        this.log(`   📝 Приблизительно слов: ${fullResponse.split(/\s+/).length}`);
+        this.log(`   💾 Использован result: ${result ? 'Да' : 'Нет'}`);
+        
         // Восстанавливаем оригинальные значения прокси
         if (originalHttpProxy) process.env.HTTP_PROXY = originalHttpProxy;
         else delete process.env.HTTP_PROXY;
         if (originalHttpsProxy) process.env.HTTPS_PROXY = originalHttpsProxy;
         else delete process.env.HTTPS_PROXY;
 
-        const finalResponse = result || fullResponse;
+        // Детальное логирование полученного контента
+        this.log(`\n📋 [AI REPORT] Анализ полученного контента:`);
+        this.log(`   result (не null): ${result !== null ? 'Да' : 'Нет'}`);
+        this.log(`   result длина: ${result ? result.length : 0} символов`);
+        this.log(`   fullResponse длина: ${fullResponse.length} символов`);
+        this.log(`   fullResponse первые 200 символов: ${fullResponse.substring(0, 200)}...`);
+        this.log(`   fullResponse последние 200 символов: ...${fullResponse.substring(Math.max(0, fullResponse.length - 200))}`);
+        
+        let finalResponse = result || fullResponse;
+        
+        // Проверяем, не пустой ли ответ
+        if (!finalResponse || finalResponse.trim().length === 0) {
+          this.logError(`\n❌ [AI REPORT] КРИТИЧЕСКАЯ ОШИБКА: Claude AI вернул пустой ответ!`);
+          this.logError(`   fullResponse пуст: ${!fullResponse || fullResponse.length === 0}`);
+          this.logError(`   result пуст: ${!result || result.length === 0}`);
+          this.logError(`   messageCount: ${messageCount}`);
+          throw new Error('Claude AI вернул пустой ответ. Проверьте API ключ и доступность сервиса.');
+        }
+        
+        this.log(`\n✅ [AI REPORT] Финальный ответ получен (до обрезки):`);
+        this.log(`   Длина: ${finalResponse.length} символов`);
+        this.log(`   Первые 500 символов:\n${finalResponse.substring(0, 500)}`);
+        
+        // Проверяем размер - если слишком большой, обрезаем
+        const MAX_RESPONSE_LENGTH = 15000; // Максимум 15000 символов (~2000 слов, ~5-7 страниц)
+        if (finalResponse.length > MAX_RESPONSE_LENGTH) {
+          this.log(`\n⚠️  [AI REPORT] Ответ от AI слишком большой (${finalResponse.length} символов)`);
+          this.log(`   Обрезаю до ${MAX_RESPONSE_LENGTH} символов...`);
+          finalResponse = finalResponse.substring(0, MAX_RESPONSE_LENGTH);
+          // Обрезаем до последнего предложения
+          const lastSentenceEnd = Math.max(
+            finalResponse.lastIndexOf('.'),
+            finalResponse.lastIndexOf('!'),
+            finalResponse.lastIndexOf('?')
+          );
+          if (lastSentenceEnd > MAX_RESPONSE_LENGTH * 0.8) {
+            finalResponse = finalResponse.substring(0, lastSentenceEnd + 1);
+            this.log(`✅ Обрезано до ${finalResponse.length} символов (до последнего предложения)`);
+          }
+        }
 
         // Очищаем ответ от лишних разделов - оставляем ТОЛЬКО "ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА"
-        return this.cleanReportFromEnglishSections(finalResponse);
+        this.log(`\n🧹 [AI REPORT] Применяю очистку от английских разделов и рассуждений...`);
+        const beforeClean = finalResponse.length;
+        const cleaned = this.cleanReportFromEnglishSections(finalResponse);
+        this.log(`   📏 До очистки: ${beforeClean} символов, после: ${cleaned.length} символов`);
+        
+        // Проверяем результат очистки
+        if (!cleaned || cleaned.trim().length === 0) {
+          this.logError(`\n❌ [AI REPORT] КРИТИЧЕСКАЯ ОШИБКА: После очистки текст стал пустым!`);
+          this.logError(`   Возможно, функция cleanReportFromEnglishSections удалила весь контент`);
+          this.logError(`   Возвращаю оригинальный ответ без очистки`);
+          this.log(`${'─'.repeat(80)}\n`);
+          return finalResponse; // Возвращаем без очистки, если очистка удалила всё
+        }
+        
+        this.log(`\n✅ [AI REPORT] Очистка завершена успешно`);
+        this.log(`   Очищенный текст (первые 500 символов):\n${cleaned.substring(0, 500)}`);
+        this.log(`${'─'.repeat(80)}\n`);
+        return cleaned;
       } catch (queryError: any) {
         // Восстанавливаем оригинальные значения прокси при ошибке
+        this.logError(`\n❌ [AI REPORT] Ошибка при выполнении query():`, queryError);
+        
         if (originalHttpProxy) process.env.HTTP_PROXY = originalHttpProxy;
         else delete process.env.HTTP_PROXY;
         if (originalHttpsProxy) process.env.HTTPS_PROXY = originalHttpsProxy;
         else delete process.env.HTTPS_PROXY;
         
+        // Дополнительная диагностика для ошибки "process exited with code 1"
+        if (queryError?.message?.includes('exited with code')) {
+          this.logWarn(`\n💡 [AI REPORT] Возможные причины ошибки:`);
+          this.logWarn(`   1. Проблема с прокси (${proxyUrl})`);
+          this.logWarn(`   2. Проблема с моделью (${options.model})`);
+          this.logWarn(`   3. Слишком большой промпт (${prompt.length} символов)`);
+          this.logWarn(`   4. Проблема с API ключом или доступом`);
+        }
+        
         throw queryError;
       }
     } catch (error: any) {
-      console.error('Ошибка при вызове Claude API:', error);
+      this.logError(`\n❌ [AI REPORT] Критическая ошибка при вызове Claude API:`, error);
       throw error;
     }
   }
@@ -331,6 +626,10 @@ ${allFilesContent.substring(0, 200000)}
    * Очистить отчет от английских разделов и повторов
    */
   private cleanReportFromEnglishSections(response: string): string {
+    this.log(`\n🔍 [CLEAN REPORT] Начало очистки отчета:`);
+    this.log(`   Входной текст: ${response.length} символов`);
+    this.log(`   Первые 300 символов: ${response.substring(0, 300)}...`);
+    
     let cleanedResponse = response;
         
         // Находим начало "ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА"
@@ -679,6 +978,265 @@ ${allFilesContent.substring(0, 200000)}
     }
     
     return cleaned;
+  }
+
+  /**
+   * Генерировать раздел "Цепочка взлома" отдельно
+   */
+  private async generateAttackChainSection(allContent: string, targetUrl: string, deliverablesDir: string): Promise<string> {
+    console.log(`\n${'─'.repeat(80)}`);
+    console.log(`🔗 [ATTACK CHAIN] Начало генерации цепочки взлома`);
+    console.log(`${'─'.repeat(80)}`);
+    
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    
+    if (!apiKey || apiKey === 'your_api_key_here') {
+      console.warn(`⚠️  [ATTACK CHAIN] API ключ не найден, использую fallback`);
+      return this.generateAttackChainSimple(allContent, targetUrl);
+    }
+    
+    console.log(`✅ [ATTACK CHAIN] API ключ найден, использую Claude AI`);
+
+    const prompt = `Ты эксперт по кибербезопасности. На основе анализа файлов результатов пентеста создай ДЕТАЛЬНУЮ ЦЕПОЧКУ ВЗЛОМА (attack chain) для сервиса ${targetUrl}.
+
+ВАЖНО:
+- Опиши пошаговую последовательность атакующих действий
+- Покажи как одна уязвимость может привести к другой (эскалация)
+- Опиши реальный сценарий эксплуатации найденных уязвимостей
+- Используй правильное форматирование Markdown: заголовки, списки, нумерация
+- Максимум 3000 слов, только на русском языке
+- НЕ копируй фрагменты файлов - описывай своими словами
+
+Файлы для анализа:
+${allContent.substring(0, 100000)}
+
+Создай детальную цепочку взлома с пошаговым описанием.`;
+
+    try {
+      const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || 'http://127.0.0.1:12334';
+      if (proxyUrl) {
+        process.env.HTTP_PROXY = proxyUrl;
+        process.env.HTTPS_PROXY = proxyUrl;
+      }
+
+      const options: any = {
+        apiKey: apiKey,
+        model: 'claude-sonnet-4-5-20250929',
+        maxTurns: 30,
+        cwd: deliverablesDir,
+        permissionMode: 'bypassPermissions' as const,
+        // Передаем прокси в env для дочернего процесса Claude Code
+        env: {
+          ...process.env,
+          HTTP_PROXY: proxyUrl,
+          HTTPS_PROXY: proxyUrl,
+          http_proxy: proxyUrl,
+          https_proxy: proxyUrl,
+          ANTHROPIC_API_KEY: apiKey,
+        },
+      };
+
+      let fullResponse = '';
+      let result: string | null = null;
+      let messageCount = 0;
+      const chainStartTime = Date.now();
+      
+      for await (const message of query({ prompt, options })) {
+        messageCount++;
+        if (message.type === 'result') {
+          const resultMessage = message as any;
+          if (resultMessage.result && typeof resultMessage.result === 'string') {
+            fullResponse = resultMessage.result;
+            result = fullResponse;
+          }
+        } else if (message.type === 'assistant') {
+          const assistantMsg = message as any;
+          if (assistantMsg.message && assistantMsg.message.content) {
+            const content = Array.isArray(assistantMsg.message.content)
+              ? assistantMsg.message.content.map((c: any) => c.text || JSON.stringify(c)).join('\n')
+              : String(assistantMsg.message.content);
+            if (content && typeof content === 'string' && content.trim().length > 0) {
+              fullResponse += content + '\n\n';
+            }
+          }
+        }
+      }
+      
+      const chainDuration = Date.now() - chainStartTime;
+      console.log(`   ⏱️  Время выполнения: ${chainDuration}ms`);
+      console.log(`   📨 Получено сообщений: ${messageCount}`);
+      console.log(`   📏 Длина ответа: ${fullResponse.length} символов`);
+      
+      let finalResponse = result || fullResponse;
+      
+      // Удаляем рассуждения Claude перед началом цепочки взлома
+      console.log(`🧹 [ATTACK CHAIN] Очищаю ответ от рассуждений...`);
+      const chainStartPatterns = [
+        /###\s*Цепочка\s+взлома/i,
+        /##\s*Цепочка\s+взлома/i,
+        /###\s*Шаг\s*1/i,
+        /###\s*Этап\s*1/i,
+        /\*\*Шаг\s*1/i,
+        /\*\*Этап\s*1/i
+      ];
+      
+      let chainStartIndex = -1;
+      for (const pattern of chainStartPatterns) {
+        const match = finalResponse.match(pattern);
+        if (match && match.index !== undefined) {
+          chainStartIndex = match.index;
+          break;
+        }
+      }
+      
+      if (chainStartIndex > 0) {
+        finalResponse = finalResponse.substring(chainStartIndex);
+      }
+      
+      // Ограничиваем размер
+      const MAX_LENGTH = 20000;
+      if (finalResponse.length > MAX_LENGTH) {
+        finalResponse = finalResponse.substring(0, MAX_LENGTH);
+        const lastSentenceEnd = Math.max(
+          finalResponse.lastIndexOf('.'),
+          finalResponse.lastIndexOf('!'),
+          finalResponse.lastIndexOf('?')
+        );
+        if (lastSentenceEnd > MAX_LENGTH * 0.8) {
+          finalResponse = finalResponse.substring(0, lastSentenceEnd + 1);
+        }
+      }
+      
+      const finalLength = finalResponse.length;
+      console.log(`   📏 Итоговый размер цепочки: ${finalLength} символов`);
+      console.log(`${'─'.repeat(80)}\n`);
+      
+      return finalResponse || 'Цепочка взлома недоступна.';
+    } catch (error: any) {
+      console.error(`\n❌ [ATTACK CHAIN] Ошибка при генерации цепочки взлома:`);
+      console.error(`   Тип: ${error?.constructor?.name || 'Unknown'}`);
+      console.error(`   Сообщение: ${error?.message || String(error)}`);
+      if (error?.code) console.error(`   Код: ${error.code}`);
+      console.warn(`   → Переключаюсь на fallback режим`);
+      return this.generateAttackChainSimple(allContent, targetUrl);
+    }
+  }
+
+  /**
+   * Генерировать краткий детальный анализ через AI (вместо копирования всех файлов)
+   */
+  private async generateDetailedAnalysis(allContent: string, targetUrl: string, deliverablesDir: string): Promise<string> {
+    console.log(`\n${'─'.repeat(80)}`);
+    console.log(`📊 [DETAILED ANALYSIS] Начало генерации детального анализа`);
+    console.log(`${'─'.repeat(80)}`);
+    
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    
+    if (!apiKey || apiKey === 'your_api_key_here') {
+      console.warn(`⚠️  [DETAILED ANALYSIS] API ключ не найден`);
+      return 'Детальный анализ доступен при использовании Claude AI (установите ANTHROPIC_API_KEY).';
+    }
+    
+    console.log(`✅ [DETAILED ANALYSIS] API ключ найден, использую Claude AI`);
+
+    const prompt = `Ты эксперт по кибербезопасности. На основе анализа файлов результатов пентеста создай КРАТКИЙ детальный анализ (максимум 2000 слов, только на русском языке).
+
+ВАЖНО:
+- НЕ копируй фрагменты файлов, код или команды
+- Кратко опиши КЛЮЧЕВЫЕ моменты из анализа файлов
+- Включи только САМОЕ ВАЖНОЕ: основные уязвимости, их влияние, рекомендации
+- Используй правильное форматирование Markdown: заголовки, списки, абзацы
+- Каждый абзац - отдельная строка с пустой строкой между абзацами
+- Используй ### для подразделов, **жирный** для важного, списки для перечислений
+
+Файлы для анализа:
+${allContent.substring(0, 100000)}
+
+Создай краткий структурированный анализ на русском языке.`;
+
+    try {
+      const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || 'http://127.0.0.1:12334';
+      if (proxyUrl) {
+        process.env.HTTP_PROXY = proxyUrl;
+        process.env.HTTPS_PROXY = proxyUrl;
+      }
+
+      const options: any = {
+        apiKey: apiKey,
+        model: 'claude-sonnet-4-5-20250929',
+        maxTurns: 30,
+        cwd: deliverablesDir,
+        permissionMode: 'bypassPermissions' as const,
+        // Передаем прокси в env для дочернего процесса Claude Code
+        env: {
+          ...process.env,
+          HTTP_PROXY: proxyUrl,
+          HTTPS_PROXY: proxyUrl,
+          http_proxy: proxyUrl,
+          https_proxy: proxyUrl,
+          ANTHROPIC_API_KEY: apiKey,
+        },
+      };
+
+      let fullResponse = '';
+      let result: string | null = null;
+      let messageCount = 0;
+      
+      for await (const message of query({ prompt, options })) {
+        messageCount++;
+        if (message.type === 'result') {
+          const resultMessage = message as any;
+          if (resultMessage.result && typeof resultMessage.result === 'string') {
+            fullResponse = resultMessage.result;
+            result = fullResponse;
+          }
+        } else if (message.type === 'assistant') {
+          const assistantMsg = message as any;
+          if (assistantMsg.message && assistantMsg.message.content) {
+            const content = Array.isArray(assistantMsg.message.content)
+              ? assistantMsg.message.content.map((c: any) => c.text || JSON.stringify(c)).join('\n')
+              : String(assistantMsg.message.content);
+            if (content && typeof content === 'string' && content.trim().length > 0) {
+              fullResponse += content + '\n\n';
+            }
+          }
+        }
+      }
+      
+      const analysisDuration = Date.now() - analysisStartTime;
+      console.log(`   ⏱️  Время выполнения: ${analysisDuration}ms`);
+      console.log(`   📨 Получено сообщений: ${messageCount}`);
+      console.log(`   📏 Длина ответа: ${fullResponse.length} символов`);
+      
+      let finalResponse = result || fullResponse;
+      
+      // Ограничиваем размер до 2000 слов (~15000 символов)
+      console.log(`🧹 [DETAILED ANALYSIS] Проверяю размер ответа...`);
+      const MAX_LENGTH = 15000;
+      if (finalResponse.length > MAX_LENGTH) {
+        finalResponse = finalResponse.substring(0, MAX_LENGTH);
+        const lastSentenceEnd = Math.max(
+          finalResponse.lastIndexOf('.'),
+          finalResponse.lastIndexOf('!'),
+          finalResponse.lastIndexOf('?')
+        );
+        if (lastSentenceEnd > MAX_LENGTH * 0.8) {
+          finalResponse = finalResponse.substring(0, lastSentenceEnd + 1);
+        }
+      }
+      
+      const finalLength = finalResponse.length;
+      console.log(`   📏 Итоговый размер анализа: ${finalLength} символов`);
+      console.log(`${'─'.repeat(80)}\n`);
+      
+      return finalResponse || 'Детальный анализ недоступен.';
+    } catch (error: any) {
+      console.error(`\n❌ [DETAILED ANALYSIS] Ошибка при генерации детального анализа:`);
+      console.error(`   Тип: ${error?.constructor?.name || 'Unknown'}`);
+      console.error(`   Сообщение: ${error?.message || String(error)}`);
+      if (error?.code) console.error(`   Код: ${error.code}`);
+      return 'Детальный анализ недоступен из-за ошибки генерации.';
+    }
   }
 
   /**
@@ -1035,7 +1593,7 @@ ${vuln.recommendation}
 
     try {
       const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkid0' });
+      await page.setContent(html, { waitUntil: 'networkidle0' });
 
       const pdfPath = join(this.REPORTS_DIR, `pentest-${pentestId}-${Date.now()}.pdf`);
 
