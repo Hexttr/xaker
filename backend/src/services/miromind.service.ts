@@ -61,28 +61,54 @@ export class MiroMindService {
     }
 
     try {
-      const message = await this.client.messages.create({
-        model: this.model,
-        max_tokens: maxTokens,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ]
-      });
-      
-      // Извлекаем текст из ответа
-      let response = '';
-      if (message.content && Array.isArray(message.content)) {
-        for (const block of message.content) {
-          if (block.type === 'text') {
-            response += block.text;
+      // Для Ollama используем прямой API вызов, так как формат может отличаться
+      if (this.baseURL.includes('11434')) {
+        // Ollama API формат
+        const response = await fetch('http://localhost:11434/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: this.model,
+            prompt: prompt,
+            stream: false,
+            options: {
+              num_predict: maxTokens
+            }
+          })
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Ollama API error: ${response.status} - ${errorText}`);
+        }
+        
+        const data = await response.json();
+        return data.response || '';
+      } else {
+        // Стандартный Anthropic API формат
+        const message = await this.client.messages.create({
+          model: this.model,
+          max_tokens: maxTokens,
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ]
+        });
+        
+        // Извлекаем текст из ответа
+        let response = '';
+        if (message.content && Array.isArray(message.content)) {
+          for (const block of message.content) {
+            if (block.type === 'text') {
+              response += block.text;
+            }
           }
         }
+        
+        return response;
       }
-      
-      return response;
     } catch (error: any) {
       const errorMessage = error?.message || String(error);
       throw new Error(`MiroMind API error: ${errorMessage}`);
