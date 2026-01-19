@@ -107,7 +107,7 @@ export class MiroMindService {
           throw new Error(`Ollama API error: ${response.status} - ${errorText}`);
         }
         
-        const data = await response.json();
+        const data = await response.json() as any;
         return data.response || '';
       } else {
         // Стандартный Anthropic API формат
