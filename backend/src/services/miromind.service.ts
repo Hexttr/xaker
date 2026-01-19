@@ -11,8 +11,8 @@ export class MiroMindService {
   private isAvailable: boolean = false;
 
   constructor() {
-    this.baseURL = process.env.MIROMIND_API_URL || 'http://localhost:8000/v1';
-    this.model = process.env.MIROMIND_MODEL || 'mirothinker-8b';
+    this.baseURL = process.env.MIROMIND_API_URL || 'http://localhost:11434/v1';
+    this.model = process.env.MIROMIND_MODEL || 'llama3.1:8b';
     
     // Создаем клиент Anthropic SDK с кастомным baseURL
     // MiroMind API совместим с Anthropic форматом
