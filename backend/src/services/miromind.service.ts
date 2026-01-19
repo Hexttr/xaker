@@ -44,7 +44,7 @@ export class MiroMindService {
       });
       
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as any;
         // Проверяем, есть ли нужная модель
         const models = data.models || data.data || [];
         const modelName = this.model.split(':')[0];
