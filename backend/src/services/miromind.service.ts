@@ -21,8 +21,11 @@ export class MiroMindService {
       baseURL: this.baseURL, // Переопределяем endpoint на локальный
     });
     
-    // Проверяем доступность при инициализации
-    this.checkAvailability();
+    // Проверяем доступность при инициализации (асинхронно, не блокируем)
+    // Реальная проверка будет выполнена при первом использовании
+    this.checkAvailability().catch(err => {
+      console.warn('⚠️  Предварительная проверка MiroMind не удалась:', err);
+    });
   }
 
   /**
