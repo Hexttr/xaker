@@ -10,22 +10,11 @@ if (-not (Test-Path "venv")) {
 
 .\venv\Scripts\Activate.ps1
 
-# Проверка доступности модели
-Write-Host "📥 Проверка модели MiroThinker..." -ForegroundColor Cyan
-
-# Запуск простого HTTP сервера для тестирования
-# В реальности здесь будет запуск через SGLang или vLLM
-Write-Host "⚠️  Для полной установки требуется:" -ForegroundColor Yellow
-Write-Host "   1. Установить SGLang или vLLM" -ForegroundColor Yellow
-Write-Host "   2. Загрузить модель MiroThinker с HuggingFace" -ForegroundColor Yellow
-Write-Host "   3. Запустить inference сервер" -ForegroundColor Yellow
-Write-Host ""
-Write-Host "📚 Документация: https://github.com/MiroMindAI/MiroThinker" -ForegroundColor Cyan
-
-# Временный заглушка для тестирования API
+# Запуск тестового сервера
 Write-Host "🔧 Запуск тестового сервера на порту 8000..." -ForegroundColor Cyan
-Write-Host "   (Это временная заглушка для тестирования интеграции)" -ForegroundColor Yellow
+Write-Host "   (Это тестовый сервер для проверки интеграции)" -ForegroundColor Yellow
+Write-Host "   Для реальной работы нужна установка SGLang/vLLM и модель MiroThinker" -ForegroundColor Yellow
+Write-Host ""
 
-# Можно использовать простой HTTP сервер для тестирования
-python -m http.server 8000 --directory . 2>&1 | Out-Null
+python simple-server.py 8000
 
