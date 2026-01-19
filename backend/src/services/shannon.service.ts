@@ -276,6 +276,17 @@ class ShannonService extends EventEmitter {
       CLAUDE_CODE_MAX_OUTPUT_TOKENS: '64000',
     };
     
+    // Если используется MiroMind, переопределяем базовый URL для Anthropic API
+    // Многие SDK поддерживают ANTHROPIC_API_BASE_URL или ANTHROPIC_BASE_URL
+    if (process.env.USE_MIROMIND === 'true' && process.env.MIROMIND_API_URL) {
+      const miromindUrl = process.env.MIROMIND_API_URL;
+      // Убираем /v1 из конца, если есть (SDK сам добавит)
+      const baseUrl = miromindUrl.replace(/\/v1\/?$/, '');
+      env.ANTHROPIC_API_BASE_URL = baseUrl;
+      env.ANTHROPIC_BASE_URL = baseUrl;
+      pentestService.addLog(pentestId, 'info', `🧠 Используется MiroMind: ${baseUrl}`);
+    }
+    
     // Если есть системные переменные прокси, используем их
     if (process.env.HTTP_PROXY) {
       env.HTTP_PROXY = process.env.HTTP_PROXY;
