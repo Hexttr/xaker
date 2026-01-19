@@ -1389,18 +1389,28 @@ ${allContent.substring(0, 100000)}
    * Генерировать краткий детальный анализ через AI (вместо копирования всех файлов)
    */
   private async generateDetailedAnalysis(allContent: string, targetUrl: string, deliverablesDir: string): Promise<string> {
-    console.log(`\n${'─'.repeat(80)}`);
-    console.log(`📊 [DETAILED ANALYSIS] Начало генерации детального анализа`);
-    console.log(`${'─'.repeat(80)}`);
+    this.log(`\n${'─'.repeat(80)}`);
+    this.log(`📊 [DETAILED ANALYSIS] Начало генерации детального анализа`);
+    this.log(`${'─'.repeat(80)}`);
+    
+    // Проверяем, использовать ли MiroMind
+    const miromindAvailable = this.useMiroMind && this.miromindService 
+      ? await this.miromindService.isServiceAvailable() 
+      : false;
+    
+    if (miromindAvailable) {
+      this.log(`🧠 [DETAILED ANALYSIS] Использую MiroMind для генерации детального анализа`);
+      return this.generateDetailedAnalysisWithMiroMind(allContent, targetUrl, deliverablesDir);
+    }
     
     const apiKey = process.env.ANTHROPIC_API_KEY;
     
     if (!apiKey || apiKey === 'your_api_key_here') {
-      console.warn(`⚠️  [DETAILED ANALYSIS] API ключ не найден`);
-      return 'Детальный анализ доступен при использовании Claude AI (установите ANTHROPIC_API_KEY).';
+      this.logWarn(`⚠️  [DETAILED ANALYSIS] API ключ не найден и MiroMind недоступен`);
+      return 'Детальный анализ доступен при использовании Claude AI или MiroMind (установите ANTHROPIC_API_KEY или USE_MIROMIND=true).';
     }
     
-    console.log(`✅ [DETAILED ANALYSIS] API ключ найден, использую Claude AI`);
+    this.log(`✅ [DETAILED ANALYSIS] API ключ найден, использую Claude AI`);
 
     const prompt = `Ты эксперт по кибербезопасности. На основе анализа файлов результатов пентеста создай КРАТКИЙ детальный анализ (максимум 2000 слов, только на русском языке).
 
