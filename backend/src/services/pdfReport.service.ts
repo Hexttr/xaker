@@ -439,7 +439,7 @@ ${allFilesContent.substring(0, 50000)}
       this.log(`🚀 [AI REPORT] Отправляю запрос к MiroMind...`);
       this.log(`   Размер промпта: ${prompt.length} символов`);
       
-      const fullResponse = await this.miromindService.generateText(prompt, 8192);
+      const fullResponse = await this.miromindService.generateText(prompt, 16000);
       
       const requestDuration = Date.now() - requestStartTime;
       this.log(`\n📊 [AI REPORT] Запрос завершен:`);
