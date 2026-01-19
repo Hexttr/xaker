@@ -281,9 +281,11 @@ ${detailedAnalysis}
     }
     
     // Проверяем, использовать ли MiroMind
-    const shouldUseMiroMind = this.useMiroMind && this.miromindService?.isServiceAvailable();
+    const miromindAvailable = this.useMiroMind && this.miromindService 
+      ? await this.miromindService.isServiceAvailable() 
+      : false;
     
-    if (shouldUseMiroMind) {
+    if (miromindAvailable) {
       try {
         this.log(`🧠 [AI REPORT] Использую MiroMind для генерации отчета`);
         const aiReport = await this.generateAttackChainWithMiroMind(content, targetUrl, deliverablesDir);
