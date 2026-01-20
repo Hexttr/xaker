@@ -76,8 +76,9 @@ export class MiroMindService {
 
   /**
    * Генерировать текст через MiroMind
+   * Без ограничений по токенам - модель сама определит оптимальный размер ответа
    */
-  async generateText(prompt: string, maxTokens: number = 8192): Promise<string> {
+  async generateText(prompt: string): Promise<string> {
     if (!this.isAvailable) {
       await this.checkAvailability();
       if (!this.isAvailable) {
@@ -88,17 +89,15 @@ export class MiroMindService {
     try {
       // Для Ollama используем прямой API вызов, так как формат может отличаться
       if (this.baseURL.includes('11434')) {
-        // Ollama API формат
+        // Ollama API формат - без ограничений по токенам
         const response = await fetch('http://localhost:11434/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: this.model,
             prompt: prompt,
-            stream: false,
-            options: {
-              num_predict: maxTokens
-            }
+            stream: false
+            // Не указываем num_predict - модель сама определит размер ответа
           })
         });
         
@@ -110,10 +109,10 @@ export class MiroMindService {
         const data = await response.json() as any;
         return data.response || '';
       } else {
-        // Стандартный Anthropic API формат
+        // Стандартный Anthropic API формат - используем максимальное значение
         const message = await this.client.messages.create({
           model: this.model,
-          max_tokens: maxTokens,
+          max_tokens: 8192, // Максимальное значение для большинства моделей
           messages: [
             {
               role: 'user',
