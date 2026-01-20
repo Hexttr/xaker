@@ -152,10 +152,20 @@ function PentestItem({
           {pentest.status === 'completed' && (
             <button
               onClick={handleGenerateReport}
-              className="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 flex-1 md:flex-initial shadow-md hover:shadow-lg"
+              disabled={isGeneratingReport}
+              className="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 flex-1 md:flex-initial shadow-md hover:shadow-lg"
             >
-              <FiFileText className="w-4 h-4" />
-              Отчет
+              {isGeneratingReport ? (
+                <>
+                  <FiLoader className="w-4 h-4 animate-spin" />
+                  Генерирую отчет...
+                </>
+              ) : (
+                <>
+                  <FiFileText className="w-4 h-4" />
+                  Отчет
+                </>
+              )}
             </button>
           )}
           <button
