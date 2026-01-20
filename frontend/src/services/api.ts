@@ -52,8 +52,10 @@ export const pentestApi = {
   getStatus: (id: string) => api.get<{ status: string }>(`/pentests/${id}/status`),
   getVulnerabilities: (id: string) => api.get<Vulnerability[]>(`/pentests/${id}/vulnerabilities`),
   generatePdfReport: async (id: string): Promise<Blob> => {
+    // Убираем таймаут для генерации PDF, так как это может занять много времени
     const response = await api.get(`/pentests/${id}/generate-pdf`, {
       responseType: 'blob',
+      timeout: 0, // Без таймаута
     });
     return response.data;
   },

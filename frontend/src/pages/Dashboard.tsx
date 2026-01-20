@@ -4,7 +4,7 @@ import { pentestApi, Pentest, CreatePentestRequest } from '../services/api';
 import LogViewer from '../components/LogViewer';
 import StatusBar from '../components/StatusBar';
 import VulnerabilitiesList from '../components/VulnerabilitiesList';
-import { FiPlus, FiPlay, FiSquare, FiTrash2, FiChevronDown, FiChevronUp, FiClock, FiTarget, FiAlertCircle, FiShield, FiFileText } from 'react-icons/fi';
+import { FiPlus, FiPlay, FiSquare, FiTrash2, FiChevronDown, FiChevronUp, FiClock, FiTarget, FiAlertCircle, FiShield, FiFileText, FiLoader } from 'react-icons/fi';
 
 // Компонент для отображения отдельного пентеста
 function PentestItem({
@@ -56,8 +56,10 @@ function PentestItem({
   });
 
   const currentStatus = statusData?.status || '⚙️ Выполнение пентеста...';
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   const handleGenerateReport = async () => {
+    setIsGeneratingReport(true);
     try {
       const blob = await pentestApi.generatePdfReport(pentest.id);
       const url = window.URL.createObjectURL(blob);
@@ -71,6 +73,8 @@ function PentestItem({
     } catch (error) {
       console.error('Ошибка при генерации PDF:', error);
       alert('Ошибка при генерации PDF отчета');
+    } finally {
+      setIsGeneratingReport(false);
     }
   };
 

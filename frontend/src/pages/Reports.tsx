@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { serviceApi, Service } from '../services/api';
 import { pentestApi, Pentest } from '../services/api';
-import { FiServer, FiFileText, FiDownload, FiCalendar } from 'react-icons/fi';
+import { FiServer, FiFileText, FiDownload, FiCalendar, FiLoader } from 'react-icons/fi';
 
 export default function Reports() {
   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
+  const [generatingReportId, setGeneratingReportId] = useState<string | null>(null);
 
   const { data: services = [] } = useQuery({
     queryKey: ['services'],
@@ -26,6 +27,7 @@ export default function Reports() {
     : pentests.filter(p => p.status === 'completed');
 
   const handleDownloadReport = async (pentestId: string) => {
+    setGeneratingReportId(pentestId);
     try {
       const blob = await pentestApi.generatePdfReport(pentestId);
       const url = window.URL.createObjectURL(blob);
@@ -39,6 +41,8 @@ export default function Reports() {
     } catch (error) {
       console.error('Ошибка при загрузке отчета:', error);
       alert('Ошибка при загрузке отчета');
+    } finally {
+      setGeneratingReportId(null);
     }
   };
 
@@ -117,10 +121,20 @@ export default function Reports() {
                       </div>
                       <button
                         onClick={() => handleDownloadReport(pentest.id)}
-                        className="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 flex items-center gap-1.5"
+                        disabled={generatingReportId === pentest.id}
+                        className="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 flex items-center gap-1.5"
                       >
-                        <FiDownload className="w-4 h-4" />
-                        Скачать отчет
+                        {generatingReportId === pentest.id ? (
+                          <>
+                            <FiLoader className="w-4 h-4 animate-spin" />
+                            Генерирую отчет...
+                          </>
+                        ) : (
+                          <>
+                            <FiDownload className="w-4 h-4" />
+                            Скачать отчет
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
