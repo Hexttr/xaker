@@ -40,31 +40,40 @@ function getAllReportFiles(deliverablesDir) {
   return files;
 }
 
-// Очистить отчет от английских разделов и повторов
+// Очистить отчет от английских разделов и повторов, а также удалить рассуждения Claude
 function cleanReportFromEnglishSections(response) {
   let cleanedReport = response;
   
-  // Находим начало "ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА"
+  // УДАЛЯЕМ все рассуждения Claude перед началом отчета
+  // Ищем начало реального отчета: "### 1. Executive Summary" или "## ПОЛНЫЙ ОТЧЕТ"
+  const reportStartPatterns = [
+    /###\s*1[\.\)]?\s*Executive\s+Summary/i,
+    /##\s*ПОЛНЫЙ\s+ОТЧЕТ\s+ПО\s+РЕЗУЛЬТАТАМ\s+ПЕНТЕСТА/i,
+    /##\s*ПОЛНЫЙ\s+ОТЧЕТ/i,
+    /##\s*ОТЧЕТ\s+ПО\s+РЕЗУЛЬТАТАМ/i
+  ];
+  
+  let reportStartIndex = -1;
+  for (const pattern of reportStartPatterns) {
+    const match = cleanedReport.match(pattern);
+    if (match && match.index !== undefined) {
+      reportStartIndex = match.index;
+      break;
+    }
+  }
+  
+  // Если нашли начало отчета - удаляем все что до него (рассуждения Claude)
+  if (reportStartIndex > 0) {
+    // Ищем текст до начала отчета - удаляем весь контент до первого найденного паттерна
+    cleanedReport = cleanedReport.substring(reportStartIndex);
+  }
+  
+  // Находим начало "ПОЛНЫЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА" (если есть)
   const fullReportPattern = /##\s*ПОЛНЫЙ\s+ОТЧЕТ\s+ПО\s+РЕЗУЛЬТАТАМ\s+ПЕНТЕСТА/i;
   const fullReportMatch = cleanedReport.match(fullReportPattern);
   
   if (fullReportMatch && fullReportMatch.index !== undefined) {
     cleanedReport = cleanedReport.substring(fullReportMatch.index);
-  } else {
-    const altPatterns = [
-      /##\s*ПОЛНЫЙ\s+ОТЧЕТ/i,
-      /##\s*ОТЧЕТ\s+ПО\s+РЕЗУЛЬТАТАМ/i,
-      /###\s*1[\.\)]?\s*Executive\s+Summary/i
-    ];
-    
-    for (const pattern of altPatterns) {
-      const match = cleanedReport.match(pattern);
-      if (match && match.index !== undefined) {
-        const startIndex = Math.max(0, match.index - 200);
-        cleanedReport = cleanedReport.substring(startIndex);
-        break;
-      }
-    }
   }
   
   // Удаляем английские разделы в начале
@@ -390,13 +399,19 @@ async function generateMarkdownReport(pentestId, pentest, deliverablesDir) {
 
 ---
 
+## 🔗 Цепочка взлома
+
+${await generateAttackChainSection(allContent, pentest.targetUrl, deliverablesDir)}
+
+---
+
 ${aiReport}
 
 ---
 
 ## 📊 Детальные результаты анализа
 
-${allContent}
+${await generateDetailedAnalysis(allContent, pentest.targetUrl, deliverablesDir)}
 
 ---
 
@@ -415,6 +430,198 @@ ${allContent}
 
   // ВАЖНО: Применяем очистку ко всему финальному отчету для удаления английских разделов
   return cleanFinalReport(report);
+}
+
+// Генерировать краткий детальный анализ через AI (вместо копирования всех файлов)
+async function generateDetailedAnalysis(allContent, targetUrl, deliverablesDir) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  
+  if (!apiKey || apiKey === 'your_api_key_here') {
+    return 'Детальный анализ доступен при использовании Claude AI (установите ANTHROPIC_API_KEY).';
+  }
+
+  const prompt = `Ты эксперт по кибербезопасности. На основе анализа файлов результатов пентеста создай КРАТКИЙ детальный анализ (максимум 2000 слов, только на русском языке).
+
+ВАЖНО:
+- НЕ копируй фрагменты файлов, код или команды
+- Кратко опиши КЛЮЧЕВЫЕ моменты из анализа файлов
+- Включи только САМОЕ ВАЖНОЕ: основные уязвимости, их влияние, рекомендации
+- Используй правильное форматирование Markdown: заголовки, списки, абзацы
+- Каждый абзац - отдельная строка с пустой строкой между абзацами
+- Используй ### для подразделов, **жирный** для важного, списки для перечислений
+
+Файлы для анализа:
+${allContent.substring(0, 100000)}
+
+Создай краткий структурированный анализ на русском языке.`;
+
+  try {
+    const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || 'http://127.0.0.1:12334';
+    if (proxyUrl) {
+      process.env.HTTP_PROXY = proxyUrl;
+      process.env.HTTPS_PROXY = proxyUrl;
+    }
+
+    const options = {
+      apiKey: apiKey,
+      model: 'claude-sonnet-4-5-20250929',
+      maxTurns: 30,
+      cwd: deliverablesDir,
+      permissionMode: 'bypassPermissions',
+    };
+
+    let fullResponse = '';
+    let result = null;
+    let messageCount = 0;
+    
+    for await (const message of query({ prompt, options })) {
+      messageCount++;
+      
+      if (message.type === 'result') {
+        if (message.result && typeof message.result === 'string') {
+          fullResponse = message.result;
+          result = fullResponse;
+        }
+      } else if (message.type === 'assistant') {
+        const assistantMsg = message;
+        if (assistantMsg.message && assistantMsg.message.content) {
+          const content = Array.isArray(assistantMsg.message.content)
+            ? assistantMsg.message.content.map((c) => c.text || JSON.stringify(c)).join('\n')
+            : String(assistantMsg.message.content);
+          if (content && typeof content === 'string' && content.trim().length > 0) {
+            fullResponse += content + '\n\n';
+          }
+        }
+      }
+    }
+    
+    let finalResponse = result || fullResponse;
+    
+    // Ограничиваем размер до 2000 слов (~15000 символов)
+    const MAX_LENGTH = 15000;
+    if (finalResponse.length > MAX_LENGTH) {
+      finalResponse = finalResponse.substring(0, MAX_LENGTH);
+      const lastSentenceEnd = Math.max(
+        finalResponse.lastIndexOf('.'),
+        finalResponse.lastIndexOf('!'),
+        finalResponse.lastIndexOf('?')
+      );
+      if (lastSentenceEnd > MAX_LENGTH * 0.8) {
+        finalResponse = finalResponse.substring(0, lastSentenceEnd + 1);
+      }
+    }
+    
+    return finalResponse || 'Детальный анализ недоступен.';
+  } catch (error) {
+    console.error('   ⚠️  Ошибка при генерации детального анализа:', error.message);
+    return 'Детальный анализ недоступен из-за ошибки генерации.';
+  }
+}
+
+// Генерировать раздел "Цепочка взлома" отдельно
+async function generateAttackChainSection(allContent, targetUrl, deliverablesDir) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  
+  if (!apiKey || apiKey === 'your_api_key_here') {
+    return generateAttackChainSimple(allContent, targetUrl);
+  }
+
+  const prompt = `Ты эксперт по кибербезопасности. На основе анализа файлов результатов пентеста создай ДЕТАЛЬНУЮ ЦЕПОЧКУ ВЗЛОМА (attack chain) для сервиса ${targetUrl}.
+
+ВАЖНО:
+- Опиши пошаговую последовательность атакующих действий
+- Покажи как одна уязвимость может привести к другой (эскалация)
+- Опиши реальный сценарий эксплуатации найденных уязвимостей
+- Используй правильное форматирование Markdown: заголовки, списки, нумерация
+- Максимум 3000 слов, только на русском языке
+- НЕ копируй фрагменты файлов - описывай своими словами
+
+Файлы для анализа:
+${allContent.substring(0, 100000)}
+
+Создай детальную цепочку взлома с пошаговым описанием.`;
+
+  try {
+    const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || 'http://127.0.0.1:12334';
+    if (proxyUrl) {
+      process.env.HTTP_PROXY = proxyUrl;
+      process.env.HTTPS_PROXY = proxyUrl;
+    }
+
+    const options = {
+      apiKey: apiKey,
+      model: 'claude-sonnet-4-5-20250929',
+      maxTurns: 30,
+      cwd: deliverablesDir,
+      permissionMode: 'bypassPermissions',
+    };
+
+    let fullResponse = '';
+    let result = null;
+    
+    for await (const message of query({ prompt, options })) {
+      if (message.type === 'result') {
+        if (message.result && typeof message.result === 'string') {
+          fullResponse = message.result;
+          result = fullResponse;
+        }
+      } else if (message.type === 'assistant') {
+        const assistantMsg = message;
+        if (assistantMsg.message && assistantMsg.message.content) {
+          const content = Array.isArray(assistantMsg.message.content)
+            ? assistantMsg.message.content.map((c) => c.text || JSON.stringify(c)).join('\n')
+            : String(assistantMsg.message.content);
+          if (content && typeof content === 'string' && content.trim().length > 0) {
+            fullResponse += content + '\n\n';
+          }
+        }
+      }
+    }
+    
+    let finalResponse = result || fullResponse;
+    
+    // Удаляем рассуждения Claude перед началом цепочки взлома
+    const chainStartPatterns = [
+      /###\s*Цепочка\s+взлома/i,
+      /##\s*Цепочка\s+взлома/i,
+      /###\s*Шаг\s*1/i,
+      /###\s*Этап\s*1/i,
+      /\*\*Шаг\s*1/i,
+      /\*\*Этап\s*1/i
+    ];
+    
+    let chainStartIndex = -1;
+    for (const pattern of chainStartPatterns) {
+      const match = finalResponse.match(pattern);
+      if (match && match.index !== undefined) {
+        chainStartIndex = match.index;
+        break;
+      }
+    }
+    
+    if (chainStartIndex > 0) {
+      finalResponse = finalResponse.substring(chainStartIndex);
+    }
+    
+    // Ограничиваем размер
+    const MAX_LENGTH = 20000;
+    if (finalResponse.length > MAX_LENGTH) {
+      finalResponse = finalResponse.substring(0, MAX_LENGTH);
+      const lastSentenceEnd = Math.max(
+        finalResponse.lastIndexOf('.'),
+        finalResponse.lastIndexOf('!'),
+        finalResponse.lastIndexOf('?')
+      );
+      if (lastSentenceEnd > MAX_LENGTH * 0.8) {
+        finalResponse = finalResponse.substring(0, lastSentenceEnd + 1);
+      }
+    }
+    
+    return finalResponse || 'Цепочка взлома недоступна.';
+  } catch (error) {
+    console.error('   ⚠️  Ошибка при генерации цепочки взлома:', error.message);
+    return generateAttackChainSimple(allContent, targetUrl);
+  }
 }
 
 // Генерировать детальную цепочку взлома с использованием Claude AI
@@ -440,7 +647,15 @@ async function generateAttackChainWithAI(content, targetUrl, deliverablesDir) {
   // Ограничиваем размер для API (200k символов)
   const limitedContent = allFilesContent.substring(0, 200000);
 
-  const prompt = `Ты эксперт по кибербезопасности и пентестингу. Проанализируй все предоставленные файлы с результатами пентеста и создай ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА для сервиса ${targetUrl}.
+  const prompt = `Ты эксперт по кибербезопасности и пентестингу. Проанализируй все предоставленные файлы с результатами пентеста и создай КРАТКИЙ ОТЧЕТ ПО РЕЗУЛЬТАТАМ ПЕНТЕСТА для сервиса ${targetUrl}.
+
+🚨 КРИТИЧЕСКИ ВАЖНО - ОГРАНИЧЕНИЕ ОБЪЕМА:
+1. ОТЧЕТ ДОЛЖЕН БЫТЬ КРАТКИМ НА 10-15 ЛИСТОВ (не более 3000-4000 слов)
+2. НЕ копируй фрагменты файлов в итоговый отчет
+3. Включай только САМЫЕ ВАЖНЫЕ уязвимости (критические и высокие)
+4. Делай описания КРАТКИМИ (2-3 предложения максимум на пункт)
+5. Не дублируй информацию между разделами
+6. Убирай все лишние детали и технические подробности, оставляй только суть
 
 КРИТИЧЕСКИ ВАЖНЫЕ ТРЕБОВАНИЯ:
 1. ВСЕ РАЗДЕЛЫ ОТЧЕТА ДОЛЖНЫ БЫТЬ НАПИСАНЫ НА РУССКОМ ЯЗЫКЕ
@@ -461,15 +676,15 @@ async function generateAttackChainWithAI(content, targetUrl, deliverablesDir) {
    - Временные рамки проведения пентеста
 
 ### 3. Детальный анализ найденных уязвимостей
-   Для КАЖДОЙ найденной уязвимости предоставь (ВСЕ НА РУССКОМ ЯЗЫКЕ):
-   - **Название уязвимости** (четкое и понятное на русском, можно указать английское название в скобках, например: "Обход CAPTCHA (Cloudflare Turnstile Bypass)")
-   - **Критичность** (КРИТИЧЕСКАЯ/ВЫСОКАЯ/СРЕДНЯЯ/НИЗКАЯ или CRITICAL/HIGH/MEDIUM/LOW)
-   - **Расположение** (URL, эндпоинт, компонент) - описание на русском
-   - **Детальное описание** (что именно не так, почему это проблема) - ТОЛЬКО НА РУССКОМ
-   - **Техническое описание** (как воспроизвести, proof-of-concept) - описание на русском, команды/код могут быть на английском
-   - **Бизнес-влияние** (какой ущерб может быть нанесен) - ТОЛЬКО НА РУССКОМ
-   - **Рекомендации по исправлению** (конкретные шаги для устранения) - ТОЛЬКО НА РУССКОМ
-   - **Оценка сложности исправления** (простая/средняя/сложная)
+   Для КАЖДОЙ критической/высокой уязвимости предоставь КРАТКО (ВСЕ НА РУССКОМ ЯЗЫКЕ, МАКСИМУМ 2-3 ПРЕДЛОЖЕНИЯ НА ПУНКТ):
+   - **Название уязвимости** (кратко, можно указать английское название в скобках)
+   - **Критичность** (КРИТИЧЕСКАЯ/ВЫСОКАЯ или CRITICAL/HIGH - включай только их)
+   - **Расположение** (коротко - URL или эндпоинт)
+   - **Краткое описание** (1-2 предложения - что не так и почему это проблема) - ТОЛЬКО НА РУССКОМ
+   - **Бизнес-влияние** (1 предложение - какой ущерб) - ТОЛЬКО НА РУССКОМ
+   - **Рекомендации** (1-2 предложения - как исправить) - ТОЛЬКО НА РУССКОМ
+   
+   ВАЖНО: Включай только критические и высокие уязвимости. Средние и низкие пропускай для краткости отчета.
 
 ### 4. Оценка рисков
    - Общая оценка рисков для бизнеса - НА РУССКОМ
@@ -492,7 +707,12 @@ async function generateAttackChainWithAI(content, targetUrl, deliverablesDir) {
 ФАЙЛЫ С РЕЗУЛЬТАТАМИ ПЕНТЕСТА:
 ${limitedContent}
 
-ВАЖНО: Не копируй фрагменты файлов которые ты анализировал в итоговый отчет. Я хочу получить краткий отчет на русском языке на 10-15 листов с самым важным анализом.`;
+💡 НАПОМИНАНИЕ О КРАТКОСТИ:
+- Отчет должен быть на 10-15 листов (не более 3000-4000 слов)
+- Включай только критические/высокие уязвимости
+- Каждое описание - максимум 2-3 предложения
+- НЕ копируй фрагменты файлов - анализируй и кратко пересказывай своими словами
+- Фокусируйся на самом важном - что нужно исправить в первую очередь`;
 
   try {
     console.log('   🤖 Генерирую цепочку взлома через Claude AI...');
@@ -579,15 +799,33 @@ ${limitedContent}
     }
 
     console.log(`   📊 Всего сообщений: ${messageCount}, Длина ответа: ${fullResponse.length}`);
+    console.log(`   📏 Размер AI-ответа в символах: ${fullResponse.length}, в словах (примерно): ${fullResponse.split(/\s+/).length}`);
     
-    const attackChain = result || fullResponse;
+    let attackChain = result || fullResponse;
     
     if (!attackChain || attackChain.trim().length === 0) {
       console.log('   ⚠️  Цепочка взлома пуста, используется fallback');
       return generateAttackChainSimple(content, targetUrl);
     }
     
-    console.log(`   ✅ Цепочка взлома сгенерирована (${attackChain.length} символов)`);
+    // КРИТИЧЕСКИ ВАЖНО: Обрезаем ответ, если он слишком большой
+    const MAX_RESPONSE_LENGTH = 15000; // Максимум 15000 символов (~2000 слов, ~10-15 страниц)
+    if (attackChain.length > MAX_RESPONSE_LENGTH) {
+      console.log(`   ⚠️  Ответ от AI слишком большой (${attackChain.length} символов), обрезаю до ${MAX_RESPONSE_LENGTH}...`);
+      attackChain = attackChain.substring(0, MAX_RESPONSE_LENGTH);
+      // Обрезаем до последнего предложения
+      const lastSentenceEnd = Math.max(
+        attackChain.lastIndexOf('.'),
+        attackChain.lastIndexOf('!'),
+        attackChain.lastIndexOf('?')
+      );
+      if (lastSentenceEnd > MAX_RESPONSE_LENGTH * 0.8) {
+        attackChain = attackChain.substring(0, lastSentenceEnd + 1);
+        console.log(`   ✅ Обрезано до ${attackChain.length} символов (до последнего предложения)`);
+      }
+    }
+    
+    console.log(`   ✅ Цепочка взлома сгенерирована (${attackChain.length} символов после обрезания)`);
 
     // Очищаем ответ от лишних разделов - применяем функцию очистки
     return cleanReportFromEnglishSections(attackChain);
@@ -630,8 +868,22 @@ ${vulnerabilities.map(v => `- ${v}`).join('\n')}
 
 // Конвертировать Markdown в HTML
 async function markdownToHtml(markdown, pentest) {
-  marked.setOptions({ gfm: true, breaks: true });
-  const htmlContent = marked.parse(markdown);
+  // Улучшаем обработку markdown: включаем переносы строк и GFM расширения
+  marked.setOptions({ 
+    gfm: true, 
+    breaks: true,  // Переносы строк превращаются в <br>
+    pedantic: false,
+    sanitize: false,
+    smartLists: true,
+    smartypants: true
+  });
+  
+  // Предобработка: убеждаемся что есть правильные переносы строк между абзацами
+  let processedMarkdown = markdown
+    .replace(/\n{3,}/g, '\n\n')  // Множественные переносы -> двойные
+    .replace(/([.!?])\s+([А-ЯЁA-Z])/g, '$1\n\n$2');  // Перенос после точки перед заглавной буквой
+  
+  const htmlContent = marked.parse(processedMarkdown);
 
   const html = `<!DOCTYPE html>
 <html lang="ru">
@@ -663,7 +915,14 @@ async function markdownToHtml(markdown, pentest) {
         blockquote { border-left: 4px solid #dc2626; padding-left: 20px; margin: 20px 0; color: #6b7280; font-style: italic; }
         ul, ol { margin: 15px 0; padding-left: 30px; }
         li { margin: 8px 0; }
+        p { margin: 12px 0; text-align: justify; }
+        p:first-child { margin-top: 0; }
+        p:last-child { margin-bottom: 0; }
         hr { border: none; border-top: 2px solid #e5e7eb; margin: 40px 0; }
+        /* Улучшаем форматирование абзацев и списков */
+        h2 + p, h3 + p, h4 + p { margin-top: 8px; }
+        /* Правильные переносы строк для markdown */
+        br { display: block; content: ''; margin-top: 8px; }
         .footer { margin-top: 60px; padding-top: 20px; border-top: 2px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 0.9em; }
     </style>
 </head>

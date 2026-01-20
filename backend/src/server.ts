@@ -36,7 +36,9 @@ app.get('/api/health', (req, res) => {
 // API Routes
 console.log('📦 Загрузка routes...');
 import pentestRoutes from './routes/pentest.routes';
+import serviceRoutes from './routes/service.routes';
 app.use('/api/pentests', pentestRoutes);
+app.use('/api/services', serviceRoutes);
 console.log('✅ Routes загружены успешно');
 
 // WebSocket connection

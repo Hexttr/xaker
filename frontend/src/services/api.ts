@@ -59,5 +59,32 @@ export const pentestApi = {
   },
 };
 
+// Service API
+export interface Service {
+  id: string;
+  name: string;
+  url: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateServiceRequest {
+  name: string;
+  url: string;
+}
+
+export interface UpdateServiceRequest {
+  name?: string;
+  url?: string;
+}
+
+export const serviceApi = {
+  getAll: () => api.get<Service[]>('/services'),
+  getById: (id: string) => api.get<Service>(`/services/${id}`),
+  create: (data: CreateServiceRequest) => api.post<Service>('/services', data),
+  update: (id: string, data: UpdateServiceRequest) => api.put<Service>(`/services/${id}`, data),
+  delete: (id: string) => api.delete(`/services/${id}`),
+};
+
 export default api;
 

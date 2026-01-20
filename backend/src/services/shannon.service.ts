@@ -289,16 +289,12 @@ class ShannonService extends EventEmitter {
       CLAUDE_CODE_MAX_OUTPUT_TOKENS: '64000',
     };
     
-    // Если используется MiroMind, переопределяем базовый URL для Anthropic API
-    // Многие SDK поддерживают ANTHROPIC_API_BASE_URL или ANTHROPIC_BASE_URL
-    if (process.env.USE_MIROMIND === 'true' && process.env.MIROMIND_API_URL) {
-      const miromindUrl = process.env.MIROMIND_API_URL;
-      // Убираем /v1 из конца, если есть (SDK сам добавит)
-      const baseUrl = miromindUrl.replace(/\/v1\/?$/, '');
-      env.ANTHROPIC_API_BASE_URL = baseUrl;
-      env.ANTHROPIC_BASE_URL = baseUrl;
-      pentestService.addLog(pentestId, 'info', `🧠 Используется MiroMind: ${baseUrl}`);
-    }
+    // ВАЖНО: Shannon всегда использует Claude API, а не MiroMind/Ollama
+    // MiroMind используется только для генерации отчетов (pdfReport.service.ts)
+    // Причина: Shannon использует Anthropic SDK, который требует формат Anthropic API
+    // Ollama API не полностью совместим с Anthropic API форматом
+    pentestService.addLog(pentestId, 'info', `🤖 Shannon использует Claude API (не MiroMind)`);
+    pentestService.addLog(pentestId, 'info', `💡 MiroMind будет использован только для генерации отчетов`);
     
     // Если есть системные переменные прокси, используем их
     if (process.env.HTTP_PROXY) {
