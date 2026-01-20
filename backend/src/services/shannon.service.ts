@@ -61,6 +61,9 @@ class ShannonService extends EventEmitter {
       await this.simulatePentest(pentestId, config);
       return;
     }
+    
+    // Логируем информацию об API ключе (без полного ключа)
+    pentestService.addLog(pentestId, 'info', `🔑 API ключ найден: ${apiKey.substring(0, 20)}...${apiKey.substring(apiKey.length - 10)} (длина: ${apiKey.length})`);
 
     pentestService.updatePentestStatus(pentestId, 'running');
     this.runningPentests.set(pentestId, null as any); // Placeholder
@@ -265,6 +268,15 @@ class ShannonService extends EventEmitter {
     }
     
     const apiKey = process.env.ANTHROPIC_API_KEY!;
+    
+    // Проверяем и логируем API ключ перед передачей в Shannon
+    if (!apiKey || apiKey === 'your_api_key_here') {
+      pentestService.addLog(pentestId, 'error', '❌ КРИТИЧЕСКАЯ ОШИБКА: ANTHROPIC_API_KEY не найден при запуске Shannon!');
+      pentestService.addLog(pentestId, 'error', '   Проверьте файл .env и перезапустите бэкенд');
+      throw new Error('ANTHROPIC_API_KEY не установлен');
+    }
+    
+    pentestService.addLog(pentestId, 'info', `🔑 Передаю API ключ в Shannon: ${apiKey.substring(0, 20)}...${apiKey.substring(apiKey.length - 10)}`);
 
     // Собираем аргументы для Shannon
     // ВАЖНО: Передаем изолированную папку, чтобы Shannon не искал код в C:\Xaker\
@@ -320,6 +332,13 @@ class ShannonService extends EventEmitter {
       env.HTTPS_PROXY = systemProxy;
       pentestService.addLog(pentestId, 'info', `🌐 Обнаружен системный прокси, используем: ${systemProxy}`);
     }
+    
+    // Финальная проверка перед запуском
+    pentestService.addLog(pentestId, 'info', `🔍 Финальная проверка env для Shannon:`);
+    pentestService.addLog(pentestId, 'info', `   ANTHROPIC_API_KEY: ${env.ANTHROPIC_API_KEY ? `${env.ANTHROPIC_API_KEY.substring(0, 20)}...${env.ANTHROPIC_API_KEY.substring(env.ANTHROPIC_API_KEY.length - 10)} (длина: ${env.ANTHROPIC_API_KEY.length})` : '❌ НЕ УСТАНОВЛЕН!'}`);
+    pentestService.addLog(pentestId, 'info', `   CLAUDE_MODEL: ${process.env.CLAUDE_MODEL || 'claude-3-haiku-20240307'}`);
+    pentestService.addLog(pentestId, 'info', `   HTTP_PROXY: ${env.HTTP_PROXY || 'не установлен'}`);
+    pentestService.addLog(pentestId, 'info', `   HTTPS_PROXY: ${env.HTTPS_PROXY || 'не установлен'}`);
     
     const shannonProcess = spawn('node', [this.SHANNON_DIST_PATH, ...args], {
       cwd: this.SHANNON_PATH,
