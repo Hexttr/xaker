@@ -5,5 +5,12 @@
     "url": "https://seller.tcell.tj/",
     "createdAt": "2026-01-20T09:24:30.228Z",
     "updatedAt": "2026-01-20T09:24:30.228Z"
+  },
+  {
+    "id": "fce3692d-d008-45b6-82ea-9bc392d0b012",
+    "name": "Тест 2",
+    "url": "https://tcell.tj/ru",
+    "createdAt": "2026-01-20T09:33:03.710Z",
+    "updatedAt": "2026-01-20T09:33:03.710Z"
   }
 ]
