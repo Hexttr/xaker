@@ -218,9 +218,10 @@ class ShannonService extends EventEmitter {
     // чтобы Shannon не анализировал код платформы Xaker
     const pentestsDir = join(process.cwd(), 'pentests');
     const pentestDir = join(pentestsDir, pentestId);
-    let repoPath = config.scope?.[0] || pentestDir;
+    let repoPath = pentestDir; // По умолчанию используем изолированную папку (только black-box)
+    let useWhiteBox = false; // Флаг для white-box анализа
     
-    // Проверяем защиту от самопроверки
+    // Проверяем защиту от самопроверки и наличие исходного кода
     if (config.scope && config.scope.length > 0) {
       const scopePath = normalize(config.scope[0]);
       
@@ -228,16 +229,24 @@ class ShannonService extends EventEmitter {
         pentestService.addLog(pentestId, 'error', `❌ ОШИБКА: Указанный путь указывает на код платформы Xaker: ${scopePath}`);
         pentestService.addLog(pentestId, 'error', '❌ Самопроверка запрещена для безопасности');
         pentestService.addLog(pentestId, 'info', '📝 Использую изолированную папку вместо указанного пути');
-        repoPath = pentestDir;
+        pentestService.addLog(pentestId, 'info', '📝 Активирован режим: только black-box тестирование (без white-box анализа)');
+        // repoPath уже установлен на pentestDir
       } else {
         // Проверяем, не пуста ли папка scope
         if (this.isScopeEmpty(scopePath)) {
           pentestService.addLog(pentestId, 'warn', `⚠️  Папка scope пуста или содержит только служебные файлы: ${scopePath}`);
-          pentestService.addLog(pentestId, 'info', '📝 White-box анализ будет пропущен, используется только black-box тестирование');
+          pentestService.addLog(pentestId, 'info', '📝 Активирован режим: только black-box тестирование (без white-box анализа)');
+          pentestService.addLog(pentestId, 'info', '📝 Использую изолированную папку для предотвращения самопроверки');
+          // repoPath остается pentestDir (изолированная папка)
         } else {
           pentestService.addLog(pentestId, 'info', `✅ Папка scope содержит исходный код: ${scopePath}`);
+          pentestService.addLog(pentestId, 'info', '📝 Активирован режим: white-box + black-box тестирование');
+          repoPath = scopePath; // Используем scope для white-box анализа
+          useWhiteBox = true;
         }
       }
+    } else {
+      pentestService.addLog(pentestId, 'info', '📝 Scope не указан, используется только black-box тестирование');
     }
     
     // Создаем изолированную папку для этого пентеста
