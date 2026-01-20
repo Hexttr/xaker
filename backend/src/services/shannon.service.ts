@@ -1,9 +1,9 @@
-import { Pentest, PentestLog } from '../types/pentest';
+import { Pentest } from '../types/pentest';
 import { pentestService } from './pentest.service';
 import { EventEmitter } from 'events';
 import { spawn, ChildProcess } from 'child_process';
 import { join, resolve, normalize } from 'path';
-import { existsSync, mkdirSync, readdirSync, statSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'fs';
 import fetch from 'node-fetch';
 
 /**
@@ -249,8 +249,8 @@ class ShannonService extends EventEmitter {
         mkdirSync(join(pentestDir, '.git'), { recursive: true });
         // Создаем README.md чтобы папка не была полностью пустой
         // Это предотвратит поиск кода в родительских директориях
-        const fs = require('fs');
-        fs.writeFileSync(
+        const { writeFileSync } = require('fs');
+        writeFileSync(
           join(pentestDir, 'README.md'),
           `# Pentest Target: ${config.targetUrl}\n\nThis directory is used for pentest analysis.\nSource code analysis will be performed on the target URL only.\n`
         );
@@ -433,7 +433,6 @@ class ShannonService extends EventEmitter {
     }
     
     const reportPath = join(deliverablesDir, 'unreachable_target_report.md');
-    const fs = require('fs');
     
     const report = `# Отчет о недоступности целевого URL
 
@@ -462,7 +461,7 @@ class ShannonService extends EventEmitter {
 ${new Date().toISOString()}
 `;
 
-    fs.writeFileSync(reportPath, report);
+    writeFileSync(reportPath, report);
     pentestService.addLog(pentestId, 'info', `📄 Отчет сохранен: ${reportPath}`);
   }
 }

@@ -19,8 +19,7 @@ class PdfReportService {
   constructor() {
     // Создаем директорию для отчетов, если её нет
     if (!existsSync(this.REPORTS_DIR)) {
-      const fs = require('fs');
-      fs.mkdirSync(this.REPORTS_DIR, { recursive: true });
+      mkdirSync(this.REPORTS_DIR, { recursive: true });
     }
     // Создаем директорию для логов
     if (!existsSync(this.LOGS_DIR)) {
