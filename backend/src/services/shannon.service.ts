@@ -372,10 +372,11 @@ class ShannonService extends EventEmitter {
 
   /**
    * Создать временный конфиг файл
+   * @deprecated Функция не реализована, конфиг не используется
    */
   private createTempConfig(pentestId: string, config: Pentest['config']): string {
-    // TODO: Создать временный YAML конфиг файл
-    // Пока возвращаем пустую строку
+    // Конфиг файл не создается, так как excludedPaths обрабатываются иначе
+    // В будущем можно реализовать создание YAML конфига для Shannon
     return '';
   }
 
