@@ -9,7 +9,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-black flex">
       <Sidebar onCollapseChange={setSidebarCollapsed} />
-      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-[84px]' : 'ml-64'}`}>
         <Outlet />
       </div>
     </div>
