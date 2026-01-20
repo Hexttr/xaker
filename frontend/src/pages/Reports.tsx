@@ -44,24 +44,24 @@ export default function Reports() {
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="p-6 md:p-8">
+      <div className="p-4 md:p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-white mb-2">Отчеты</h1>
-            <p className="text-gray-400">Просмотр и загрузка отчетов по пентестам</p>
+          <div className="mb-4">
+            <h1 className="text-xl font-semibold text-white mb-1">Отчеты</h1>
+            <p className="text-sm text-gray-500">Просмотр и загрузка отчетов по пентестам</p>
           </div>
 
           {/* Service Selection */}
-          <div className="bg-gray-900 rounded-lg shadow-lg p-6 mb-6 border border-gray-700">
-            <label className="block text-sm font-medium text-gray-300 mb-3">
-              <FiServer className="inline w-4 h-4 mr-2" />
+          <div className="bg-gray-900 rounded p-4 mb-4 border border-gray-700">
+            <label className="block text-xs font-normal text-gray-400 mb-1.5">
+              <FiServer className="inline w-3 h-3 mr-1.5" />
               Выберите сервис
             </label>
             <select
               value={selectedServiceId}
               onChange={(e) => setSelectedServiceId(e.target.value)}
-              className="w-full md:w-auto px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full md:w-auto px-3 py-1.5 text-sm bg-gray-800 border border-gray-700 text-white rounded focus:ring-1 focus:ring-red-500 focus:border-red-500"
             >
               <option value="">Все сервисы</option>
               {services.map((service) => (
@@ -73,15 +73,15 @@ export default function Reports() {
           </div>
 
           {/* Reports List */}
-          <div className="bg-gray-900 rounded-lg shadow-lg border border-gray-700">
-            <div className="p-6 border-b border-gray-700">
-              <h2 className="text-2xl font-bold text-white">
+          <div className="bg-gray-900 rounded border border-gray-700">
+            <div className="p-4 border-b border-gray-700">
+              <h2 className="text-base font-medium text-white">
                 Отчеты {selectedService && `- ${selectedService.name}`}
               </h2>
             </div>
 
             {completedPentests.length === 0 ? (
-              <div className="p-6 text-center text-gray-400">
+              <div className="p-4 text-center text-sm text-gray-500">
                 {selectedServiceId
                   ? 'Отчеты для выбранного сервиса не найдены.'
                   : 'Завершенные пентесты не найдены. Отчеты появятся после завершения пентестов.'}
@@ -91,25 +91,25 @@ export default function Reports() {
                 {completedPentests.map((pentest) => (
                   <div
                     key={pentest.id}
-                    className="p-6 hover:bg-gray-800 transition-colors duration-200"
+                    className="p-4 hover:bg-gray-800 transition-colors duration-200"
                   >
-                    <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <FiFileText className="w-5 h-5 text-blue-600" />
-                          <h3 className="text-xl font-semibold text-white">{pentest.name}</h3>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <FiFileText className="w-4 h-4 text-blue-600" />
+                          <h3 className="text-sm font-medium text-white">{pentest.name}</h3>
                         </div>
-                        <p className="text-gray-300 mb-2 font-mono text-sm">{pentest.targetUrl}</p>
-                        <div className="flex items-center gap-4 text-sm text-gray-400">
+                        <p className="text-gray-500 mb-2 font-mono text-xs">{pentest.targetUrl}</p>
+                        <div className="flex items-center gap-3 text-xs text-gray-600">
                           <span className="flex items-center gap-1">
-                            <FiCalendar className="w-4 h-4" />
+                            <FiCalendar className="w-3 h-3" />
                             {pentest.completedAt
                               ? new Date(pentest.completedAt).toLocaleString('ru-RU', {
-                                  dateStyle: 'long',
+                                  dateStyle: 'short',
                                   timeStyle: 'short',
                                 })
                               : new Date(pentest.createdAt).toLocaleString('ru-RU', {
-                                  dateStyle: 'long',
+                                  dateStyle: 'short',
                                   timeStyle: 'short',
                                 })}
                           </span>
@@ -117,9 +117,9 @@ export default function Reports() {
                       </div>
                       <button
                         onClick={() => handleDownloadReport(pentest.id)}
-                        className="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
+                        className="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 flex items-center gap-1.5"
                       >
-                        <FiDownload className="w-5 h-5" />
+                        <FiDownload className="w-4 h-4" />
                         Скачать отчет
                       </button>
                     </div>

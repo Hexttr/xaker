@@ -85,64 +85,64 @@ export default function LogViewer({
   );
 
   return (
-    <div className="border border-gray-700 rounded-lg overflow-hidden bg-gray-900">
-      <div className="bg-gray-800 px-4 py-2 border-b border-gray-700 flex items-center justify-between">
-        <div className="flex items-center gap-3 flex-1">
-          <h4 className="text-white font-semibold">Live Logs</h4>
-          <span className="text-gray-400 text-sm">
+    <div className="border border-gray-700 rounded overflow-hidden bg-gray-900">
+      <div className="bg-gray-800 px-3 py-1.5 border-b border-gray-700 flex items-center justify-between">
+        <div className="flex items-center gap-2 flex-1">
+          <h4 className="text-white text-xs font-medium">Live Logs</h4>
+          <span className="text-gray-500 text-xs">
             {filteredLogs.length} сообщений
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <input
             type="text"
             placeholder="Поиск в логах..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="bg-gray-700 text-white px-3 py-1 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-gray-700 text-white px-2 py-0.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
           {autoScroll && (
             <button
               onClick={() => setIsPaused(!isPaused)}
-              className={`px-3 py-1 rounded text-sm font-medium ${
+              className={`px-2 py-0.5 rounded text-xs font-normal ${
                 isPaused 
                   ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
                   : 'bg-gray-700 hover:bg-gray-600 text-white'
               }`}
             >
-              {isPaused ? '▶️ Продолжить' : '⏸️ Пауза'}
+              {isPaused ? '▶️' : '⏸️'}
             </button>
           )}
         </div>
       </div>
       <div
         ref={logContainerRef}
-        className="p-4 font-mono text-sm overflow-y-auto"
+        className="p-3 font-mono text-xs overflow-y-auto"
         style={{ maxHeight, minHeight: '200px' }}
       >
         {filteredLogs.length === 0 ? (
-          <div className="text-gray-500 text-center py-8">
+          <div className="text-gray-600 text-center py-6 text-xs">
             {filter ? 'Нет логов, соответствующих фильтру' : 'Логи отсутствуют'}
           </div>
         ) : (
           filteredLogs.map((log) => (
             <div
               key={log.id}
-              className={`mb-1 px-2 py-1 rounded ${getLogBg(log.level)}`}
+              className={`mb-0.5 px-1.5 py-0.5 rounded ${getLogBg(log.level)}`}
             >
-              <span className="text-gray-500 text-xs mr-2">
+              <span className="text-gray-600 text-xs mr-1.5">
                 {new Date(log.timestamp).toLocaleTimeString('ru-RU', {
                   hour: '2-digit',
                   minute: '2-digit',
                   second: '2-digit',
                 })}
               </span>
-              <span className="mr-2">{getLogIcon(log.level)}</span>
-              <span className={`font-medium ${getLogColor(log.level)}`}>
+              <span className="mr-1.5 text-xs">{getLogIcon(log.level)}</span>
+              <span className={`font-normal text-xs ${getLogColor(log.level)}`}>
                 [{log.level.toUpperCase()}]
               </span>
               <span 
-                className="ml-2 text-gray-300"
+                className="ml-1.5 text-gray-400 text-xs"
                 dangerouslySetInnerHTML={{ 
                   __html: highlightKeywords(log.message) 
                 }}

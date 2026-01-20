@@ -63,13 +63,13 @@ export default function Services() {
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="p-6 md:p-8">
+      <div className="p-4 md:p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Сервисы</h1>
-              <p className="text-gray-400">Управление целевыми сервисами для пентестинга</p>
+              <h1 className="text-xl font-semibold text-white mb-1">Сервисы</h1>
+              <p className="text-sm text-gray-500">Управление целевыми сервисами для пентестинга</p>
             </div>
             <button
               onClick={() => {
@@ -77,51 +77,51 @@ export default function Services() {
                 setFormData({ name: '', url: '' });
                 setShowCreateForm(true);
               }}
-              className="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg"
+              className="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 flex items-center gap-2"
             >
-              <FiPlus className="w-5 h-5" />
+              <FiPlus className="w-4 h-4" />
               Добавить сервис
             </button>
           </div>
 
           {/* Create/Edit Form */}
           {showCreateForm && (
-            <div className="bg-gray-900 rounded-lg shadow-lg p-6 mb-6 border border-gray-700 border-l-4 border-l-green-500">
-              <h2 className="text-xl font-semibold mb-4 text-white">
+            <div className="bg-gray-900 rounded p-4 mb-4 border border-gray-700 border-l-2 border-l-green-500">
+              <h2 className="text-base font-medium mb-3 text-white">
                 {editingService ? 'Редактировать сервис' : 'Создать новый сервис'}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-xs font-normal text-gray-400 mb-1.5">
                     Название сервиса
                   </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-1.5 text-sm bg-gray-800 border border-gray-700 text-white rounded focus:ring-1 focus:ring-green-500 focus:border-green-500"
                     placeholder="Например: Мой веб-сайт"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-xs font-normal text-gray-400 mb-1.5">
                     URL сервиса
                   </label>
                   <input
                     type="url"
                     value={formData.url}
                     onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono"
+                    className="w-full px-3 py-1.5 text-sm bg-gray-800 border border-gray-700 text-white rounded focus:ring-1 focus:ring-green-500 focus:border-green-500 font-mono"
                     placeholder="https://example.com"
                     required
                   />
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                   <button
                     type="submit"
                     disabled={createMutation.isPending || updateMutation.isPending}
-                    className="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50 transition-colors duration-200"
+                    className="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white px-4 py-1.5 rounded text-sm font-medium disabled:opacity-50 transition-colors duration-200"
                   >
                     {createMutation.isPending || updateMutation.isPending
                       ? 'Сохранение...'
@@ -132,7 +132,7 @@ export default function Services() {
                   <button
                     type="button"
                     onClick={handleCancel}
-                    className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors duration-200"
+                    className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors duration-200"
                   >
                     Отмена
                   </button>
@@ -142,15 +142,15 @@ export default function Services() {
           )}
 
           {/* Services List */}
-          <div className="bg-gray-900 rounded-lg shadow-lg border border-gray-700">
-            <div className="p-6 border-b border-gray-700">
-              <h2 className="text-2xl font-bold text-white">Список сервисов</h2>
+          <div className="bg-gray-900 rounded border border-gray-700">
+            <div className="p-4 border-b border-gray-700">
+              <h2 className="text-base font-medium text-white">Список сервисов</h2>
             </div>
 
             {isLoading ? (
-              <div className="p-6 text-center text-gray-400">Загрузка...</div>
+              <div className="p-4 text-center text-sm text-gray-500">Загрузка...</div>
             ) : services.length === 0 ? (
-              <div className="p-6 text-center text-gray-400">
+              <div className="p-4 text-center text-sm text-gray-500">
                 Сервисы еще не добавлены. Создайте новый сервис для начала.
               </div>
             ) : (
@@ -158,33 +158,33 @@ export default function Services() {
                 {services.map((service) => (
                   <div
                     key={service.id}
-                    className="p-6 hover:bg-gray-800 transition-colors duration-200"
+                    className="p-4 hover:bg-gray-800 transition-colors duration-200"
                   >
-                    <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <FiServer className="w-5 h-5 text-red-600" />
-                          <h3 className="text-xl font-semibold text-white">{service.name}</h3>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <FiServer className="w-4 h-4 text-red-600" />
+                          <h3 className="text-sm font-medium text-white">{service.name}</h3>
                         </div>
-                        <div className="flex items-center gap-2 text-gray-400 mb-3">
-                          <FiGlobe className="w-4 h-4" />
-                          <span className="font-mono text-sm break-all">{service.url}</span>
+                        <div className="flex items-center gap-1.5 text-gray-500 mb-2">
+                          <FiGlobe className="w-3 h-3" />
+                          <span className="font-mono text-xs break-all">{service.url}</span>
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-600">
                           Создан: {new Date(service.createdAt).toLocaleString('ru-RU')}
                           {service.updatedAt !== service.createdAt && (
-                            <span className="ml-4">
+                            <span className="ml-3">
                               Обновлен: {new Date(service.updatedAt).toLocaleString('ru-RU')}
                             </span>
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1.5">
                         <button
                           onClick={() => handleEdit(service)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-2"
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-normal transition-colors duration-200 flex items-center gap-1.5"
                         >
-                          <FiEdit2 className="w-4 h-4" />
+                          <FiEdit2 className="w-3 h-3" />
                           Редактировать
                         </button>
                         <button
@@ -194,9 +194,9 @@ export default function Services() {
                             }
                           }}
                           disabled={deleteMutation.isPending}
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors duration-200 flex items-center gap-2"
+                          className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-normal disabled:opacity-50 transition-colors duration-200 flex items-center gap-1.5"
                         >
-                          <FiTrash2 className="w-4 h-4" />
+                          <FiTrash2 className="w-3 h-3" />
                           Удалить
                         </button>
                       </div>
