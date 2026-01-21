@@ -6,7 +6,8 @@ import {
   FiBarChart2, 
   FiInfo,
   FiChevronLeft,
-  FiChevronRight
+  FiChevronRight,
+  FiHome
 } from 'react-icons/fi';
 import { useState } from 'react';
 
@@ -17,6 +18,7 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
+  { path: '/', label: 'Главная', icon: <FiHome /> },
   { path: '/services', label: 'Сервисы', icon: <FiServer /> },
   { path: '/pentests', label: 'Пентесты', icon: <FiShield /> },
   { path: '/reports', label: 'Отчеты', icon: <FiFileText /> },
@@ -45,7 +47,7 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
       } flex flex-col h-screen fixed left-0 top-0 z-50`}
     >
       {/* Logo */}
-      <div className="p-4 border-b border-gray-800 flex items-center justify-center">
+      <Link to="/" className="p-4 border-b border-gray-800 flex items-center justify-center hover:bg-gray-800/50 transition-colors">
         {!collapsed && (
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center">
@@ -64,12 +66,14 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
             <FiShield className="w-5 h-5 text-white" />
           </div>
         )}
-      </div>
+      </Link>
 
       {/* Menu Items */}
       <nav className="flex-1 p-4 space-y-2">
         {menuItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = item.path === '/' 
+            ? location.pathname === '/' 
+            : location.pathname === item.path;
           return (
             <Link
               key={item.path}
