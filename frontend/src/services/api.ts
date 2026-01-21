@@ -41,9 +41,33 @@ export interface Vulnerability {
   location?: string;
 }
 
+export interface VulnerabilityComparison {
+  fixed: any[];
+  remaining: any[];
+  new: any[];
+  partiallyFixed: Array<{ previous: any; current: any }>;
+  worsened: Array<{ previous: any; current: any }>;
+  regressed: any[];
+  metrics: {
+    totalFixed: number;
+    totalRemaining: number;
+    totalNew: number;
+    fixRate: number;
+    improvementRate: number;
+  };
+}
+
+export interface PentestComparison {
+  previousPentest?: any;
+  currentPentest: any;
+  comparison: VulnerabilityComparison | null;
+  message?: string;
+}
+
 export const pentestApi = {
   getAll: () => api.get<Pentest[]>('/pentests'),
   getById: (id: string) => api.get<Pentest>(`/pentests/${id}`),
+  compareWithPrevious: (id: string) => api.get<PentestComparison>(`/pentests/${id}/compare-with-previous`),
   create: (data: CreatePentestRequest) => api.post<Pentest>('/pentests', data),
   start: (id: string) => api.post(`/pentests/${id}/start`),
   stop: (id: string) => api.post(`/pentests/${id}/stop`),
