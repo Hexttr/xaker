@@ -109,10 +109,10 @@ export class MiroMindService {
         const data = await response.json() as any;
         return data.response || '';
       } else {
-        // Стандартный Anthropic API формат - используем максимальное значение
+        // Стандартный Anthropic API формат - используем максимальное значение для снятия ограничений
         const message = await this.client.messages.create({
           model: this.model,
-          max_tokens: 8192, // Максимальное значение для большинства моделей
+          max_tokens: 81920, // Очень большое значение для снятия ограничений (максимум для большинства моделей)
           messages: [
             {
               role: 'user',

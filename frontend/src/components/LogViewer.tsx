@@ -1,5 +1,5 @@
 // Компонент для отображения логов с цветовым кодированием
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 
 interface Log {
   id: string;
@@ -12,22 +12,30 @@ interface LogViewerProps {
   logs: Log[];
   autoScroll?: boolean;
   maxHeight?: string;
+  isLoading?: boolean;
 }
 
 export default function LogViewer({ 
   logs, 
   autoScroll = true,
-  maxHeight = '24rem' 
+  maxHeight = '24rem',
+  isLoading = false
 }: LogViewerProps) {
   const [isPaused, setIsPaused] = useState(false);
   const [filter, setFilter] = useState<string>('');
   const logContainerRef = useRef<HTMLDivElement>(null);
 
+  // Оптимизация: используем requestAnimationFrame для плавного скролла
   useEffect(() => {
     if (autoScroll && !isPaused && logContainerRef.current) {
-      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+      // Используем requestAnimationFrame для неблокирующего скролла
+      requestAnimationFrame(() => {
+        if (logContainerRef.current) {
+          logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+        }
+      });
     }
-  }, [logs, autoScroll, isPaused]);
+  }, [logs.length, autoScroll, isPaused]); // Зависим от длины, а не от всего массива
 
   const getLogColor = (level: string) => {
     switch (level) {
@@ -68,7 +76,12 @@ export default function LogViewer({
     }
   };
 
-  const highlightKeywords = (text: string) => {
+  // Мемоизируем highlightKeywords - не пересоздавать функцию при каждом рендере
+  const highlightKeywords = useCallback((text: string) => {
+    // Упрощаем - убираем подсветку для производительности, если текст слишком длинный
+    if (text.length > 500) {
+      return text; // Не подсвечиваем длинные сообщения
+    }
     const keywords = ['vulnerability', 'critical', 'error', 'CVSS', 'exploited', 'уязвимость', 'критическая', 'ошибка', 'эксплуатирована'];
     let highlighted = text;
     keywords.forEach(keyword => {
@@ -76,13 +89,33 @@ export default function LogViewer({
       highlighted = highlighted.replace(regex, '<span class="font-bold text-white">$1</span>');
     });
     return highlighted;
-  };
+  }, []);
 
-  const filteredLogs = logs.filter(log => 
-    filter === '' || 
-    log.message.toLowerCase().includes(filter.toLowerCase()) ||
-    log.level.toLowerCase().includes(filter.toLowerCase())
-  );
+  // Мемоизируем фильтрацию и ограничиваем количество логов для производительности
+  const filteredLogs = useMemo(() => {
+    let result = logs.filter(log => 
+      filter === '' || 
+      log.message.toLowerCase().includes(filter.toLowerCase()) ||
+      log.level.toLowerCase().includes(filter.toLowerCase())
+    );
+    
+    // Ограничиваем количество отображаемых логов (показываем только последние 500)
+    // Это критично для производительности при большом количестве логов
+    if (result.length > 500) {
+      result = result.slice(-500);
+    }
+    
+    return result;
+  }, [logs, filter]);
+
+  // Мемоизируем форматирование даты
+  const formatTime = useCallback((timestamp: string) => {
+    return new Date(timestamp).toLocaleTimeString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  }, []);
 
   return (
     <div className="border border-gray-700 rounded overflow-hidden bg-gray-900">
@@ -120,35 +153,49 @@ export default function LogViewer({
         className="p-3 font-mono text-xs overflow-y-auto"
         style={{ maxHeight, minHeight: '200px' }}
       >
-        {filteredLogs.length === 0 ? (
+        {isLoading && logs.length === 0 ? (
+          <div className="text-gray-400 text-center py-8 flex flex-col items-center gap-2">
+            <div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-xs">Загружаю логи...</span>
+          </div>
+        ) : filteredLogs.length === 0 ? (
           <div className="text-gray-600 text-center py-6 text-xs">
             {filter ? 'Нет логов, соответствующих фильтру' : 'Логи отсутствуют'}
           </div>
         ) : (
-          filteredLogs.map((log) => (
-            <div
-              key={log.id}
-              className={`mb-0.5 px-1.5 py-0.5 rounded ${getLogBg(log.level)}`}
-            >
-              <span className="text-gray-600 text-xs mr-1.5">
-                {new Date(log.timestamp).toLocaleTimeString('ru-RU', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                })}
-              </span>
-              <span className="mr-1.5 text-xs">{getLogIcon(log.level)}</span>
-              <span className={`font-normal text-xs ${getLogColor(log.level)}`}>
-                [{log.level.toUpperCase()}]
-              </span>
-              <span 
-                className="ml-1.5 text-gray-400 text-xs"
-                dangerouslySetInnerHTML={{ 
-                  __html: highlightKeywords(log.message) 
-                }}
-              />
-            </div>
-          ))
+          <>
+            {isLoading && logs.length > 0 && (
+              <div className="text-gray-500 text-center py-2 text-xs flex items-center justify-center gap-2 mb-2 border-b border-gray-700">
+                <div className="w-3 h-3 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                <span>Обновление логов...</span>
+              </div>
+            )}
+            {filteredLogs.length >= 500 && logs.length > filteredLogs.length && (
+              <div className="text-yellow-500 text-center py-2 text-xs mb-2 border-b border-gray-700">
+                Показаны последние 500 из {logs.length} логов
+              </div>
+            )}
+            {filteredLogs.map((log) => (
+              <div
+                key={log.id}
+                className={`mb-0.5 px-1.5 py-0.5 rounded ${getLogBg(log.level)}`}
+              >
+                <span className="text-gray-600 text-xs mr-1.5">
+                  {formatTime(log.timestamp)}
+                </span>
+                <span className="mr-1.5 text-xs">{getLogIcon(log.level)}</span>
+                <span className={`font-normal text-xs ${getLogColor(log.level)}`}>
+                  [{log.level.toUpperCase()}]
+                </span>
+                <span 
+                  className="ml-1.5 text-gray-400 text-xs"
+                  dangerouslySetInnerHTML={{ 
+                    __html: highlightKeywords(log.message)
+                  }}
+                />
+              </div>
+            ))}
+          </>
         )}
       </div>
     </div>

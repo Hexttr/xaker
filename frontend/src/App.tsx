@@ -3,7 +3,7 @@ import Layout from './components/Layout';
 import Services from './pages/Services';
 import Pentests from './pages/Pentests';
 import Reports from './pages/Reports';
-import BusinessAnalysis from './pages/BusinessAnalysis';
+import Analytics from './pages/Analytics';
 import About from './pages/About';
 import './App.css';
 
@@ -16,7 +16,7 @@ function App() {
           <Route path="services" element={<Services />} />
           <Route path="pentests" element={<Pentests />} />
           <Route path="reports" element={<Reports />} />
-          <Route path="business-analysis" element={<BusinessAnalysis />} />
+          <Route path="analytics" element={<Analytics />} />
           <Route path="about" element={<About />} />
         </Route>
       </Routes>

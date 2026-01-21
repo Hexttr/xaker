@@ -32,11 +32,12 @@ function PentestItem({
   getStatusColor: (status: Pentest['status']) => string;
   getStatusText: (status: Pentest['status']) => string;
 }) {
-  const { data: logs = [] } = useQuery({
+  const { data: logs = [], isLoading: logsLoading, isFetching: logsFetching } = useQuery({
     queryKey: ['pentest-logs', pentest.id],
     queryFn: () => pentestApi.getLogs(pentest.id).then(res => res.data),
     enabled: expanded,
     refetchInterval: expanded ? 1000 : false,
+    placeholderData: (previousData) => previousData ?? [],
   });
 
   // Получаем текущий статус для отображения
@@ -182,7 +183,12 @@ function PentestItem({
         <div className="mt-4 pt-4 border-t border-gray-700">
           <VulnerabilitiesList vulnerabilities={vulnerabilities} />
           <div className="mt-4">
-            <LogViewer logs={logs} autoScroll={true} maxHeight="24rem" />
+            <LogViewer 
+              logs={logs} 
+              autoScroll={true} 
+              maxHeight="24rem"
+              isLoading={logsLoading || logsFetching}
+            />
           </div>
         </div>
       )}

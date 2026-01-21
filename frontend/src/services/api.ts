@@ -75,6 +75,7 @@ export const pentestApi = {
   getLogs: (id: string) => api.get(`/pentests/${id}/logs`),
   getStatus: (id: string) => api.get<{ status: string }>(`/pentests/${id}/status`),
   getVulnerabilities: (id: string) => api.get<Vulnerability[]>(`/pentests/${id}/vulnerabilities`),
+  checkReportExists: (id: string) => api.get<{ exists: boolean; path: string | null }>(`/pentests/${id}/report-exists`),
   generatePdfReport: async (id: string): Promise<Blob> => {
     // Убираем таймаут для генерации PDF, так как это может занять много времени
     const response = await api.get(`/pentests/${id}/generate-pdf`, {

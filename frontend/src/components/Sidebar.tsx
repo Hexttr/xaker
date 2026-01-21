@@ -20,7 +20,7 @@ const menuItems: MenuItem[] = [
   { path: '/services', label: 'Сервисы', icon: <FiServer /> },
   { path: '/pentests', label: 'Пентесты', icon: <FiShield /> },
   { path: '/reports', label: 'Отчеты', icon: <FiFileText /> },
-  { path: '/business-analysis', label: 'Бизнес анализ', icon: <FiBarChart2 /> },
+  { path: '/analytics', label: 'Аналитика', icon: <FiBarChart2 /> },
   { path: '/about', label: 'О сервисе', icon: <FiInfo /> },
 ];
 

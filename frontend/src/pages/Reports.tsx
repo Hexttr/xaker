@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { serviceApi, Service } from '../services/api';
 import { pentestApi, Pentest } from '../services/api';
-import { FiServer, FiFileText, FiDownload, FiCalendar, FiLoader } from 'react-icons/fi';
+import { FiServer, FiFileText, FiDownload, FiCalendar, FiLoader, FiRefreshCw } from 'react-icons/fi';
 
 export default function Reports() {
   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
@@ -20,15 +20,41 @@ export default function Reports() {
 
   // Фильтруем завершенные пентесты по выбранному сервису
   const selectedService = services.find(s => s.id === selectedServiceId);
-  const completedPentests = selectedServiceId
-    ? pentests.filter(
-        p => p.status === 'completed' && p.targetUrl === selectedService?.url
-      )
-    : pentests.filter(p => p.status === 'completed');
+  const completedPentests = useMemo(() => {
+    return selectedServiceId
+      ? pentests.filter(
+          p => p.status === 'completed' && p.targetUrl === selectedService?.url
+        )
+      : pentests.filter(p => p.status === 'completed');
+  }, [pentests, selectedServiceId, selectedService]);
+
+  // Проверяем наличие отчетов для каждого пентеста
+  const reportChecks = useQuery({
+    queryKey: ['report-exists', completedPentests.map(p => p.id)],
+    queryFn: async () => {
+      const checks = await Promise.all(
+        completedPentests.map(async (pentest) => {
+          try {
+            const response = await pentestApi.checkReportExists(pentest.id);
+            return { pentestId: pentest.id, exists: response.data.exists };
+          } catch {
+            return { pentestId: pentest.id, exists: false };
+          }
+        })
+      );
+      return checks.reduce((acc, check) => {
+        acc[check.pentestId] = check.exists;
+        return acc;
+      }, {} as Record<string, boolean>);
+    },
+    enabled: completedPentests.length > 0,
+    staleTime: 30 * 1000, // Кэш 30 секунд
+  });
 
   const handleDownloadReport = async (pentestId: string) => {
     setGeneratingReportId(pentestId);
     try {
+      // Всегда вызываем generatePdfReport - он вернет существующий или сгенерирует новый
       const blob = await pentestApi.generatePdfReport(pentestId);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -38,6 +64,9 @@ export default function Reports() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      
+      // Обновляем кэш проверки отчетов
+      reportChecks.refetch();
     } catch (error) {
       console.error('Ошибка при загрузке отчета:', error);
       alert('Ошибка при загрузке отчета');
@@ -119,23 +148,39 @@ export default function Reports() {
                           </span>
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleDownloadReport(pentest.id)}
-                        disabled={generatingReportId === pentest.id}
-                        className="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 flex items-center gap-1.5"
-                      >
-                        {generatingReportId === pentest.id ? (
-                          <>
-                            <FiLoader className="w-4 h-4 animate-spin" />
-                            Генерирую отчет...
-                          </>
-                        ) : (
-                          <>
-                            <FiDownload className="w-4 h-4" />
-                            Скачать отчет
-                          </>
-                        )}
-                      </button>
+                      {(() => {
+                        const reportExists = reportChecks.data?.[pentest.id] ?? false;
+                        const isGenerating = generatingReportId === pentest.id;
+                        
+                        return (
+                          <button
+                            onClick={() => handleDownloadReport(pentest.id)}
+                            disabled={isGenerating}
+                            className={`bg-gradient-to-r ${
+                              reportExists 
+                                ? 'from-green-600 to-green-800 hover:from-green-700 hover:to-green-900' 
+                                : 'from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900'
+                            } disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-1.5 rounded text-sm font-medium transition-all duration-200 flex items-center gap-1.5`}
+                          >
+                            {isGenerating ? (
+                              <>
+                                <FiLoader className="w-4 h-4 animate-spin" />
+                                {reportExists ? 'Обновляю отчет...' : 'Генерирую отчет...'}
+                              </>
+                            ) : reportExists ? (
+                              <>
+                                <FiDownload className="w-4 h-4" />
+                                Скачать отчет
+                              </>
+                            ) : (
+                              <>
+                                <FiRefreshCw className="w-4 h-4" />
+                                Сгенерировать отчет
+                              </>
+                            )}
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 ))}
