@@ -238,9 +238,9 @@ export default function Analytics() {
           )}
 
           {!selectedServiceId && (
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-8 border border-gray-700 shadow-lg text-center">
-              <FiBarChart2 className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-sm text-gray-500">
+            <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-8 border border-gray-700 shadow-lg text-center flex flex-col items-center justify-center min-h-[calc(100vh-300px)]">
+              <FiBarChart2 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <p className="text-base text-gray-400">
                 Выберите сервис для просмотра аналитики
               </p>
             </div>
