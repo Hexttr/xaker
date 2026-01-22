@@ -26,7 +26,7 @@ export default function VulnerabilitiesList({ vulnerabilities }: Vulnerabilities
         return (
           <div
             key={vuln.id || index}
-            className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 border border-gray-700 shadow-lg hover:shadow-xl transition-all duration-200"
+            className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg p-3 border border-gray-700 shadow-lg hover:shadow-xl transition-all duration-200"
             style={{
               borderLeftColor: colors.border.includes('red') ? '#ef4444' : 
                               colors.border.includes('orange') ? '#f97316' :
@@ -35,34 +35,25 @@ export default function VulnerabilitiesList({ vulnerabilities }: Vulnerabilities
               borderLeftWidth: '4px',
             }}
           >
-            {/* Header with severity badge */}
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className={`p-2 ${colors.light} rounded-lg`}>
-                  <FiAlertCircle className={`w-4 h-4 ${colors.text}`} />
+            {/* Header: Severity badge and Type in one line */}
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <div className="flex items-center gap-1.5">
+                <div className={`p-1 ${colors.light} rounded`}>
+                  <FiAlertCircle className={`w-3 h-3 ${colors.text}`} />
                 </div>
-                <div>
-                  <span className={`px-2 py-0.5 rounded text-xs font-semibold text-white ${colors.bg}`}>
-                    {label}
-                  </span>
-                </div>
+                <span className={`px-1.5 py-0.5 rounded text-xs font-semibold text-white ${colors.bg}`}>
+                  {label}
+                </span>
               </div>
-            </div>
-
-            {/* Type */}
-            <div className="mb-2">
-              <span className="text-xs text-gray-400 font-medium">Тип:</span>
-              <p className="text-sm font-mono text-green-400 mt-0.5 truncate">{vuln.type}</p>
+              <span className="text-xs font-mono text-green-400 truncate">{vuln.type}</span>
             </div>
 
             {/* Title */}
-            <div className="mb-3">
-              <p className="text-sm text-white font-medium line-clamp-2">{vuln.title}</p>
-            </div>
+            <p className="text-sm text-white font-medium line-clamp-2 mb-1.5">{vuln.title}</p>
 
             {/* Location */}
             {vuln.location && (
-              <div className="flex items-center gap-1.5 text-xs text-cyan-400 mt-3 pt-3 border-t border-gray-700">
+              <div className="flex items-center gap-1 text-xs text-cyan-400 pt-1.5 border-t border-gray-700">
                 <FiMapPin className="w-3 h-3 flex-shrink-0" />
                 <span className="font-mono truncate">{vuln.location}</span>
               </div>
