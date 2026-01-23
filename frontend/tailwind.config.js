@@ -10,6 +10,11 @@ export default {
       screens: {
         'xs': '475px',
       },
+      // Шрифты как в landing page
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
       // Улучшенные цвета для Pentest.red
       colors: {
         'pentest-red': {

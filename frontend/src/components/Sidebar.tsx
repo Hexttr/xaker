@@ -10,6 +10,7 @@ import {
   FiHome
 } from 'react-icons/fi';
 import { useState } from 'react';
+import Logo from './Logo';
 
 interface MenuItem {
   path: string;
@@ -48,24 +49,7 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
     >
       {/* Logo */}
       <Link to="/" className="p-4 border-b border-gray-800 flex items-center justify-center hover:bg-gray-800/50 transition-colors">
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center">
-              <FiShield className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <div className="text-white font-bold text-sm">
-                Pentest<span className="text-red-600">.red</span>
-              </div>
-              <div className="text-gray-400 text-xs">ENTERPRISE</div>
-            </div>
-          </div>
-        )}
-        {collapsed && (
-          <div className="w-8 h-8 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center">
-            <FiShield className="w-5 h-5 text-white" />
-          </div>
-        )}
+        <Logo size={collapsed ? "md" : "md"} showText={!collapsed} />
       </Link>
 
       {/* Menu Items */}
