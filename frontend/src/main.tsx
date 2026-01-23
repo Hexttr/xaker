@@ -16,6 +16,15 @@ const queryClient = new QueryClient({
   },
 });
 
+// Принудительная очистка Service Workers при загрузке
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    for(let registration of registrations) {
+      registration.unregister().catch(() => {});
+    }
+  });
+}
+
 const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error('Root element not found!');
