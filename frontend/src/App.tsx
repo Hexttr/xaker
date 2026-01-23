@@ -17,21 +17,27 @@ function App() {
   
   // Логируем для отладки
   console.log('App: pathname =', pathname, 'basename =', basename);
+  console.log('App: Component rendering...');
   
-  return (
-    <BrowserRouter basename={basename}>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="services" element={<Services />} />
-          <Route path="pentests" element={<Pentests />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="analytics" element={<Analytics />} />
-          <Route path="about" element={<About />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-  );
+  try {
+    return (
+      <BrowserRouter basename={basename}>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="services" element={<Services />} />
+            <Route path="pentests" element={<Pentests />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="about" element={<About />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    );
+  } catch (error) {
+    console.error('App: Error rendering:', error);
+    return <div style={{color: 'white', padding: '20px'}}>Error: {String(error)}</div>;
+  }
 }
 
 export default App;

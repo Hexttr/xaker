@@ -43,6 +43,13 @@ root.render(
 );
 console.log('main.tsx: Render called successfully');
 
+// Проверка через таймаут
+setTimeout(() => {
+  const rootContent = document.getElementById('root')?.innerHTML;
+  console.log('main.tsx: Root content after 1s:', rootContent?.substring(0, 200));
+  console.log('main.tsx: Root children count:', document.getElementById('root')?.children.length);
+}, 1000);
+
 
 
 
