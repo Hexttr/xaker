@@ -8,6 +8,17 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     base,
+    build: {
+      // Добавляем хеш к именам файлов для кэширования
+      rollupOptions: {
+        output: {
+          // Добавляем timestamp для принудительного обновления
+          entryFileNames: `assets/[name]-[hash].js`,
+          chunkFileNames: `assets/[name]-[hash].js`,
+          assetFileNames: `assets/[name]-[hash].[ext]`,
+        },
+      },
+    },
     server: {
       port: 5173,
       host: '0.0.0.0',
