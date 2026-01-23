@@ -20,7 +20,6 @@ const Logo = ({ size = "md", showText = true, className = "" }: LogoProps) => {
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           className={`${sizes[size].icon} text-red-600`}
-          style={{ display: 'block', width: '100%', height: '100%' }}
           data-testid="logo-svg"
         >
           {/* Sharp Shield Shape */}
@@ -49,12 +48,9 @@ const Logo = ({ size = "md", showText = true, className = "" }: LogoProps) => {
       </div>
       
       {showText && (
-        <div className="flex flex-col">
-          <span className={`${sizes[size].text} font-bold text-white`}>
-            Pentest<span className="text-red-600">.red</span>
-          </span>
-          <span className="text-gray-400 text-xs">ENTERPRISE</span>
-        </div>
+        <span className={`${sizes[size].text} font-bold text-white`}>
+          Pentest<span className="text-red-600">.red</span>
+        </span>
       )}
     </div>
   );
