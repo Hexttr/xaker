@@ -10,7 +10,6 @@ import {
   FiHome
 } from 'react-icons/fi';
 import { useState } from 'react';
-import Logo from './Logo';
 
 interface MenuItem {
   path: string;
