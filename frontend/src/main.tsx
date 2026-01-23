@@ -1,17 +1,8 @@
-console.log('main.tsx: Starting module execution');
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-console.log('main.tsx: React and QueryClient imported');
-
-console.log('main.tsx: About to import App...');
 import App from './App';
-console.log('main.tsx: App imported, type:', typeof App, 'value:', App);
-
 import './index.css';
-
-console.log('main.tsx: All imports completed');
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,48 +16,19 @@ const queryClient = new QueryClient({
   },
 });
 
-console.log('main.tsx: QueryClient created');
-
 const rootElement = document.getElementById('root');
-console.log('main.tsx: Root element:', rootElement);
-
 if (!rootElement) {
-  console.error('main.tsx: Root element not found!');
   throw new Error('Root element not found!');
 }
 
-console.log('main.tsx: Creating root...');
 const root = ReactDOM.createRoot(rootElement);
-console.log('main.tsx: Root created, rendering...');
-
-try {
-  console.log('main.tsx: Creating App component...');
-  const appElement = <App />;
-  console.log('main.tsx: App element created');
-  
-  console.log('main.tsx: Wrapping in providers...');
-  // Временно убираем StrictMode для диагностики
-  const wrappedApp = (
+root.render(
+  <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      {appElement}
+      <App />
     </QueryClientProvider>
-  );
-  console.log('main.tsx: Wrapped app created');
-  
-  console.log('main.tsx: Calling root.render...');
-  root.render(wrappedApp);
-  console.log('main.tsx: Render called successfully');
-} catch (error) {
-  console.error('main.tsx: ERROR during render:', error);
-  root.render(<div style={{color: 'white', padding: '20px', backgroundColor: 'red'}}>Render Error: {String(error)}</div>);
-}
-
-// Проверка через таймаут
-setTimeout(() => {
-  const rootContent = document.getElementById('root')?.innerHTML;
-  console.log('main.tsx: Root content after 1s:', rootContent?.substring(0, 200));
-  console.log('main.tsx: Root children count:', document.getElementById('root')?.children.length);
-}, 1000);
+  </React.StrictMode>
+);
 
 
 

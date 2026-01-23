@@ -1,20 +1,32 @@
-console.log('App.tsx: Module loading...');
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Layout from './components/Layout';
+import Home from './pages/Home';
+import Services from './pages/Services';
+import Pentests from './pages/Pentests';
+import Reports from './pages/Reports';
+import Analytics from './pages/Analytics';
+import About from './pages/About';
+import './App.css';
 
-// Простейший тест - без импортов
 function App() {
-  console.log('App: Function called!');
-  console.log('App: Returning simple div...');
+  // Определяем базовый путь: /app в production, / в development
+  const basename = import.meta.env.PROD ? '/app' : '/';
   
   return (
-    <div style={{color: 'white', padding: '20px', backgroundColor: 'blue', minHeight: '100vh', fontSize: '24px'}}>
-      <h1>✅ App is working!</h1>
-      <p>Pathname: {window.location.pathname}</p>
-      <p>If you see this, React is rendering correctly!</p>
-    </div>
+    <BrowserRouter basename={basename}>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="services" element={<Services />} />
+          <Route path="pentests" element={<Pentests />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="about" element={<About />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-console.log('App.tsx: Function defined, exporting...');
 
 export default App;
 
