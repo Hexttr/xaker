@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  base: process.env.NODE_ENV === 'production' ? '/app/' : '/',
+  base: mode === 'production' ? '/app/' : '/',
   server: {
     port: 5173,
     host: '0.0.0.0',
@@ -18,5 +18,5 @@ export default defineConfig({
       },
     },
   },
-});
+}));
 
