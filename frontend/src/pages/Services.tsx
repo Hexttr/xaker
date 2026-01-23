@@ -417,14 +417,14 @@ export default function Services() {
                         </div>
                         <p className="text-lg sm:text-xl font-bold text-white">{stats.failed}</p>
                       </div>
-                      <div className="bg-gray-800/50 rounded-lg p-2 sm:p-3 border border-gray-700 min-w-0 col-span-2">
+                      <div className="bg-gray-800/50 rounded-lg p-2 sm:p-3 border border-gray-700 min-w-0">
                         <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
                           <FiAlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-orange-400 flex-shrink-0" />
                           <span className="text-xs text-gray-400 truncate">Уязвимости</span>
                         </div>
                         <p className="text-lg sm:text-xl font-bold text-white">{stats.vulnerabilities}</p>
                       </div>
-                      <div className="bg-gray-800/50 rounded-lg p-2 sm:p-3 border border-gray-700 min-w-0 col-span-2">
+                      <div className="bg-gray-800/50 rounded-lg p-2 sm:p-3 border border-gray-700 min-w-0">
                         <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
                           <FiBarChart2 className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400 flex-shrink-0" />
                           <span className="text-xs text-gray-400 truncate">Оценка безопасности</span>
