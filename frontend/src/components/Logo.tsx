@@ -5,6 +5,8 @@ interface LogoProps {
 }
 
 const Logo = ({ size = "md", showText = true, className = "" }: LogoProps) => {
+  console.log('Logo component rendering:', { size, showText });
+  
   const sizes = {
     sm: { icon: "h-6 w-6", text: "text-lg" },
     md: { icon: "h-8 w-8", text: "text-xl" },
