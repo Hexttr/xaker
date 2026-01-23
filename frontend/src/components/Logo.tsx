@@ -14,12 +14,13 @@ const Logo = ({ size = "md", showText = true, className = "" }: LogoProps) => {
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       {/* Shield with AI */}
-      <div className="relative">
+      <div className="relative flex-shrink-0">
         <svg
           viewBox="0 0 32 32"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           className={`${sizes[size].icon} text-red-600`}
+          style={{ display: 'block' }}
         >
           {/* Sharp Shield Shape */}
           <path
