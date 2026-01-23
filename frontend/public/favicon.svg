@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Красный фон -->
+  <rect width="64" height="64" rx="12" fill="#dc2626"/>
+  
+  <!-- Щит -->
+  <path d="M32 8 L20 12 L20 28 C20 36 24 42 28 44 L32 46 L36 44 C40 42 44 36 44 28 L44 12 Z" 
+        fill="white" 
+        stroke="#b91c1c" 
+        stroke-width="2"/>
+  
+  <!-- Внутренний элемент щита -->
+  <path d="M32 16 L24 18 L24 28 C24 33 27 37 30 38 L32 39 L34 38 C37 37 40 33 40 28 L40 18 Z" 
+        fill="#dc2626" 
+        opacity="0.3"/>
+  
+  <!-- Крест/галочка на щите -->
+  <path d="M28 28 L30 30 L36 24" 
+        stroke="white" 
+        stroke-width="3" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" 
+        fill="none"/>
+</svg>
+
