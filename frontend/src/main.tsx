@@ -45,12 +45,11 @@ try {
   console.log('main.tsx: App element created');
   
   console.log('main.tsx: Wrapping in providers...');
+  // Временно убираем StrictMode для диагностики
   const wrappedApp = (
-    <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        {appElement}
-      </QueryClientProvider>
-    </React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      {appElement}
+    </QueryClientProvider>
   );
   console.log('main.tsx: Wrapped app created');
   
