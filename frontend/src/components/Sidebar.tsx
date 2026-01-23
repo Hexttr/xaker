@@ -49,7 +49,11 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
     >
       {/* Logo */}
       <Link to="/" className="p-4 border-b border-gray-800 flex items-center justify-center hover:bg-gray-800/50 transition-colors">
-        <Logo size={collapsed ? "md" : "md"} showText={!collapsed} />
+        {collapsed ? (
+          <Logo size="md" showText={false} />
+        ) : (
+          <Logo size="md" showText={true} />
+        )}
       </Link>
 
       {/* Menu Items */}
