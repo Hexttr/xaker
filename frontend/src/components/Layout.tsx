@@ -6,9 +6,9 @@ export default function Layout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Принудительно создаем стили для сетчатого фона, чтобы они не были удалены при сборке
-  // Используем более яркие линии для лучшей видимости
+  // Используем более яркие линии для лучшей видимости (0.25 вместо 0.2)
   const gridStyle: React.CSSProperties = {
-    backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px)',
+    backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.25) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.25) 1px, transparent 1px)',
     backgroundSize: '60px 60px',
     backgroundPosition: '0 0',
     position: 'absolute',
