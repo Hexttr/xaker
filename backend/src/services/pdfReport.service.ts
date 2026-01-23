@@ -2137,10 +2137,17 @@ ${vuln.recommendation}
    * Конвертировать HTML в PDF
    */
   private async htmlToPdf(html: string, pentestId: string): Promise<string> {
-    const browser = await puppeteer.launch({
+    const launchOptions: any = {
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
+    };
+
+    // Поддержка кастомного пути к Chromium (для Linux)
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+      launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+
+    const browser = await puppeteer.launch(launchOptions);
 
     try {
       const page = await browser.newPage();

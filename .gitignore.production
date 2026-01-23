@@ -1,0 +1,21 @@
+# Production specific ignores
+# Добавьте эти строки в .gitignore при деплое на сервер
+
+# Логи
+*.log
+backend.log
+frontend.log
+backend.pid
+frontend.pid
+
+# Environment files
+backend/.env
+.env
+
+# PM2
+.pm2/
+
+# System files
+.DS_Store
+Thumbs.db
+
