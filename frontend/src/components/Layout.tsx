@@ -4,8 +4,6 @@ import Sidebar from './Sidebar';
 
 export default function Layout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  
-  console.log('Layout component rendering with grid background');
 
   return (
     <div className="min-h-screen bg-black flex relative">
