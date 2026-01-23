@@ -9,8 +9,11 @@ import About from './pages/About';
 import './App.css';
 
 function App() {
+  // Определяем базовый путь: /app в production, / в development
+  const basename = import.meta.env.PROD ? '/app' : '/';
+  
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
