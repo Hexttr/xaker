@@ -8,6 +8,20 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Простой тест - должен сработать сразу
+      console.log('Inline script: HTML loaded');
+      document.addEventListener('DOMContentLoaded', () => {
+        console.log('Inline script: DOMContentLoaded fired');
+        const root = document.getElementById('root');
+        if (root) {
+          console.log('Inline script: Root element found');
+          root.innerHTML = '<div style="color: red; padding: 20px; font-size: 24px;">⚠️ Если вы видите это, HTML и JavaScript работают, но React не загрузился</div>';
+        } else {
+          console.error('Inline script: Root element NOT found!');
+        }
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
