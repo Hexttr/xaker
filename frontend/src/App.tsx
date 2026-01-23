@@ -9,13 +9,11 @@ import About from './pages/About';
 import './App.css';
 
 function App() {
-  // Определяем базовый путь: /app в production, / в development
-  // В production сборке Vite автоматически устанавливает import.meta.env.PROD = true
-  // Для надежности проверяем несколько условий
-  const isProduction = import.meta.env.PROD || 
-                       import.meta.env.MODE === 'production' || 
-                       window.location.pathname.startsWith('/app');
-  const basename = isProduction ? '/app' : '/';
+  // Определяем базовый путь на основе текущего URL
+  // Если путь начинается с /app, используем /app как basename
+  // Иначе используем / (для development)
+  const pathname = window.location.pathname;
+  const basename = pathname.startsWith('/app') ? '/app' : '/';
   
   return (
     <BrowserRouter basename={basename}>
