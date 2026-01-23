@@ -5,16 +5,28 @@ import Sidebar from './Sidebar';
 export default function Layout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Сетчатый фон - используем только inline стили для гарантии рендеринга
+  const gridBackgroundStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px)',
+    backgroundSize: '60px 60px',
+    backgroundPosition: '0 0',
+    pointerEvents: 'none',
+    zIndex: 0,
+    opacity: 1,
+  };
+
   return (
     <div className="min-h-screen bg-black flex relative">
       {/* Grid Background - сетчатый фон как на landing page */}
       <div 
-        className="absolute inset-0 pointer-events-none z-0 bg-grid-dark"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.15) 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
-          backgroundPosition: '0 0',
-        }}
+        style={gridBackgroundStyle}
         data-testid="grid-background"
         aria-hidden="true"
       />
