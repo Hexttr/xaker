@@ -47,9 +47,12 @@ const Logo = ({ size = "md", showText = true, className = "" }: LogoProps) => {
       </div>
       
       {showText && (
-        <span className={`${sizes[size].text} font-bold text-white`}>
-          Pentest<span className="text-red-600">.red</span>
-        </span>
+        <div className="flex flex-col">
+          <span className={`${sizes[size].text} font-bold text-white`}>
+            Pentest<span className="text-red-600">.red</span>
+          </span>
+          <span className="text-gray-400 text-xs">ENTERPRISE</span>
+        </div>
       )}
     </div>
   );
