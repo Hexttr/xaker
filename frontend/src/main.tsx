@@ -34,14 +34,28 @@ console.log('main.tsx: Creating root...');
 const root = ReactDOM.createRoot(rootElement);
 console.log('main.tsx: Root created, rendering...');
 
-root.render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </React.StrictMode>,
-);
-console.log('main.tsx: Render called successfully');
+try {
+  console.log('main.tsx: Creating App component...');
+  const appElement = <App />;
+  console.log('main.tsx: App element created');
+  
+  console.log('main.tsx: Wrapping in providers...');
+  const wrappedApp = (
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        {appElement}
+      </QueryClientProvider>
+    </React.StrictMode>
+  );
+  console.log('main.tsx: Wrapped app created');
+  
+  console.log('main.tsx: Calling root.render...');
+  root.render(wrappedApp);
+  console.log('main.tsx: Render called successfully');
+} catch (error) {
+  console.error('main.tsx: ERROR during render:', error);
+  root.render(<div style={{color: 'white', padding: '20px', backgroundColor: 'red'}}>Render Error: {String(error)}</div>);
+}
 
 // Проверка через таймаут
 setTimeout(() => {
