@@ -47,14 +47,14 @@ export default function Sidebar({ onCollapseChange }: SidebarProps) {
         collapsed ? 'w-[84px]' : 'w-64'
       } flex flex-col h-screen fixed left-0 top-0 z-50`}
     >
-      {/* Logo */}
-      <Link to="/" className="p-4 border-b border-gray-800 flex items-center justify-center hover:bg-gray-800/50 transition-colors">
+      {/* Logo - скрыт */}
+      {/* <Link to="/" className="p-4 border-b border-gray-800 flex items-center justify-center hover:bg-gray-800/50 transition-colors">
         {collapsed ? (
           <Logo size="md" showText={false} />
         ) : (
           <Logo size="md" showText={true} />
         )}
-      </Link>
+      </Link> */}
 
       {/* Menu Items */}
       <nav className="flex-1 p-4 space-y-2">
