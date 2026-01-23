@@ -5,16 +5,19 @@ import Sidebar from './Sidebar';
 export default function Layout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Принудительно создаем стили для сетчатого фона, чтобы они не были удалены при сборке
+  const gridStyle = {
+    backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px)',
+    backgroundSize: '60px 60px',
+    opacity: 0.8
+  };
+
   return (
     <div className="min-h-screen bg-black flex relative">
       {/* Grid Background - сетчатый фон как на landing page */}
       <div 
         className="absolute inset-0 pointer-events-none z-0 bg-grid-dark"
-        style={{
-          backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
-          opacity: 0.8
-        }}
+        style={gridStyle}
         data-testid="grid-background"
       />
       
