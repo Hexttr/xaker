@@ -11,11 +11,13 @@ export default function Layout() {
     <div className="min-h-screen bg-black flex relative">
       {/* Grid Background - сетчатый фон как на landing page */}
       <div 
-        className="absolute inset-0 bg-grid-dark opacity-60 pointer-events-none z-0" 
+        className="absolute inset-0 pointer-events-none z-0" 
         style={{
-          backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px)',
-          backgroundSize: '60px 60px'
+          backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.15) 1px, transparent 1px)',
+          backgroundSize: '60px 60px',
+          opacity: 0.6
         }}
+        data-testid="grid-background"
       />
       
       <Sidebar onCollapseChange={setSidebarCollapsed} />

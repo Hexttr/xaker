@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     base,
     build: {
+      minify: 'esbuild',
       // Добавляем хеш к именам файлов для кэширования
       rollupOptions: {
         output: {
