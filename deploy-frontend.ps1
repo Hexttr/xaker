@@ -37,31 +37,17 @@ try {
 
 # 2. Обновляем код на сервере
 Write-Host "📥 Обновляем код на сервере..." -ForegroundColor Yellow
-$updateCommand = @"
-cd $serverDir
-git stash
-git pull origin prod
-"@
-
+$updateCommand = "cd $serverDir && git stash && git pull origin prod"
 & $plink -ssh $server -pw $password -hostkey $hostkey $updateCommand
 
 # 3. Собираем frontend на сервере
 Write-Host "🔨 Собираем frontend на сервере..." -ForegroundColor Yellow
-$buildCommand = @"
-cd $serverDir/$frontendDir
-rm -rf node_modules/.vite dist
-npm run build
-"@
-
+$buildCommand = "cd $serverDir/$frontendDir && rm -rf node_modules/.vite dist && npm run build"
 & $plink -ssh $server -pw $password -hostkey $hostkey $buildCommand
 
 # 4. Копируем public файлы в dist
 Write-Host "📦 Копируем public файлы..." -ForegroundColor Yellow
-$copyCommand = @"
-cd $serverDir/$frontendDir
-cp -r public/* dist/ 2>/dev/null || true
-"@
-
+$copyCommand = "cd $serverDir/$frontendDir && cp -r public/* dist/ 2>/dev/null || true"
 & $plink -ssh $server -pw $password -hostkey $hostkey $copyCommand
 
 # 5. Перезагружаем Nginx
@@ -70,12 +56,7 @@ Write-Host "🔄 Перезагружаем Nginx..." -ForegroundColor Yellow
 
 # 6. Проверяем результат
 Write-Host "✅ Проверяем результат..." -ForegroundColor Yellow
-$checkCommand = @"
-cd $serverDir/$frontendDir/dist
-ls -lh assets/index-*.js | tail -1
-cat index.html | grep 'index-.*\.js'
-"@
-
+$checkCommand = "cd $serverDir/$frontendDir/dist && ls -lh assets/index-*.js | tail -1 && cat index.html | grep 'index-.*\.js'"
 & $plink -ssh $server -pw $password -hostkey $hostkey $checkCommand
 
 Write-Host "✅ Frontend успешно задеплоен!" -ForegroundColor Green
