@@ -13,22 +13,43 @@
   <body>
     <div id="root"></div>
     <script>
-      // Принудительная очистка всех Service Workers
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for(let registration of registrations) {
-            registration.unregister();
+      // АГРЕССИВНАЯ очистка всех Service Workers - выполняется СРАЗУ
+      (function() {
+        if ('serviceWorker' in navigator) {
+          // Удаляем все регистрации
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            console.log('Найдено Service Workers:', registrations.length);
+            registrations.forEach(function(registration) {
+              registration.unregister().then(function(success) {
+                console.log('Service Worker удален:', success);
+              }).catch(function(error) {
+                console.error('Ошибка удаления Service Worker:', error);
+              });
+            });
+          });
+          
+          // Очищаем все кэши
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              console.log('Найдено кэшей:', names.length);
+              names.forEach(function(name) {
+                caches.delete(name).then(function(success) {
+                  console.log('Кэш удален:', name, success);
+                });
+              });
+            });
           }
-        });
-        // Очистка кэша
-        if ('caches' in window) {
-          caches.keys().then(function(names) {
-            for (let name of names) {
-              caches.delete(name);
-            }
+          
+          // Блокируем регистрацию новых Service Workers
+          navigator.serviceWorker.addEventListener('controllerchange', function() {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+              registrations.forEach(function(registration) {
+                registration.unregister();
+              });
+            });
           });
         }
-      }
+      })();
     </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>

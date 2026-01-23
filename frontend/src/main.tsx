@@ -16,13 +16,29 @@ const queryClient = new QueryClient({
   },
 });
 
-// Принудительная очистка Service Workers при загрузке
+// АГРЕССИВНАЯ очистка Service Workers при загрузке React
 if ('serviceWorker' in navigator) {
+  // Удаляем все регистрации
   navigator.serviceWorker.getRegistrations().then(function(registrations) {
-    for(let registration of registrations) {
-      registration.unregister().catch(() => {});
-    }
+    console.log('[React] Найдено Service Workers:', registrations.length);
+    registrations.forEach(function(registration) {
+      registration.unregister().then(function(success) {
+        console.log('[React] Service Worker удален:', success);
+      }).catch(function(error) {
+        console.error('[React] Ошибка удаления:', error);
+      });
+    });
   });
+  
+  // Очищаем кэши
+  if ('caches' in window) {
+    caches.keys().then(function(names) {
+      console.log('[React] Найдено кэшей:', names.length);
+      names.forEach(function(name) {
+        caches.delete(name);
+      });
+    });
+  }
 }
 
 const rootElement = document.getElementById('root');
