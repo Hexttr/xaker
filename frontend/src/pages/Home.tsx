@@ -1,26 +1,20 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { serviceApi, Service } from '../services/api';
+import { serviceApi } from '../services/api';
 import { pentestApi, Pentest, Vulnerability } from '../services/api';
 import {
   FiServer,
   FiShield,
   FiAlertCircle,
   FiCheckCircle,
-  FiTrendingUp,
-  FiTrendingDown,
   FiActivity,
   FiClock,
   FiArrowRight,
-  FiBarChart2,
-  FiTarget,
 } from 'react-icons/fi';
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
@@ -394,7 +388,8 @@ export default function Home() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, value }) => {
+                    label={({ cx, cy, midAngle, innerRadius, outerRadius, name, percent }: any) => {
+                      if (!midAngle || percent === undefined) return null;
                       const RADIAN = Math.PI / 180;
                       const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
                       const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -450,7 +445,7 @@ export default function Home() {
                       fontWeight: '700',
                       marginBottom: '4px',
                     }}
-                    formatter={(value: number, name: string) => [`${value}`, name]}
+                    formatter={(value: number | undefined, name: string) => [`${value ?? 0}`, name]}
                   />
                   <Legend
                     wrapperStyle={{ color: '#e5e7eb', fontSize: '13px', fontWeight: '500' }}

@@ -25,7 +25,7 @@ export default function VulnerabilitiesList({ vulnerabilities }: Vulnerabilities
         
         return (
           <div
-            key={vuln.id || index}
+            key={`${vuln.type}-${vuln.title}-${index}`}
             className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg p-3 border border-gray-700 shadow-lg hover:shadow-xl transition-all duration-200"
             style={{
               borderLeftColor: colors.border.includes('red') ? '#ef4444' : 

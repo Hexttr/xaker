@@ -9,7 +9,6 @@ import {
   FiCalendar,
   FiLoader,
   FiRefreshCw,
-  FiShield,
   FiCheckCircle,
   FiSearch,
   FiGlobe,
@@ -131,7 +130,7 @@ export default function Reports() {
     };
   }, [completedPentests, services, selectedServiceId, searchQuery]);
 
-  const handleDownloadReport = async (pentestId: string, forceGenerate: boolean = false) => {
+  const handleDownloadReport = async (pentestId: string, _forceGenerate: boolean = false) => {
     setGeneratingReportId(pentestId);
     try {
       // Всегда вызываем generatePdfReport - он вернет существующий или сгенерирует новый

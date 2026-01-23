@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { serviceApi, Service, CreateServiceRequest, UpdateServiceRequest } from '../services/api';
 import { pentestApi } from '../services/api';
-import { FiPlus, FiEdit2, FiTrash2, FiServer, FiGlobe, FiShield, FiActivity, FiAlertCircle, FiCalendar, FiCheckCircle } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiServer, FiGlobe, FiShield, FiActivity, FiAlertCircle, FiCalendar, FiCheckCircle, FiBarChart2 } from 'react-icons/fi';
+import { Vulnerability } from '../services/api';
 
 export default function Services() {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -130,6 +131,33 @@ export default function Services() {
     return map;
   }, [pentestIdsToLoad, vulnerabilitiesData1, vulnerabilitiesData2, vulnerabilitiesData3, vulnerabilitiesData4, vulnerabilitiesData5, vulnerabilitiesData6, vulnerabilitiesData7, vulnerabilitiesData8, vulnerabilitiesData9, vulnerabilitiesData10]);
 
+  // Создаем мапу: pentestId -> массив уязвимостей (для вычисления Security Score)
+  const vulnerabilitiesDataMap = useMemo(() => {
+    const map: Record<string, Vulnerability[]> = {};
+    const queries = [
+      vulnerabilitiesData1,
+      vulnerabilitiesData2,
+      vulnerabilitiesData3,
+      vulnerabilitiesData4,
+      vulnerabilitiesData5,
+      vulnerabilitiesData6,
+      vulnerabilitiesData7,
+      vulnerabilitiesData8,
+      vulnerabilitiesData9,
+      vulnerabilitiesData10,
+    ];
+    
+    pentestIdsToLoad.forEach((pentestId, index) => {
+      const query = queries[index];
+      if (query?.data) {
+        map[pentestId] = query.data;
+      } else {
+        map[pentestId] = [];
+      }
+    });
+    return map;
+  }, [pentestIdsToLoad, vulnerabilitiesData1, vulnerabilitiesData2, vulnerabilitiesData3, vulnerabilitiesData4, vulnerabilitiesData5, vulnerabilitiesData6, vulnerabilitiesData7, vulnerabilitiesData8, vulnerabilitiesData9, vulnerabilitiesData10]);
+
   const createMutation = useMutation({
     mutationFn: (data: CreateServiceRequest) => serviceApi.create(data).then(res => res.data),
     onSuccess: () => {
@@ -177,6 +205,33 @@ export default function Services() {
     setFormData({ name: '', url: '' });
   };
 
+  // Функция для вычисления Security Score
+  const calculateSecurityScore = (vulnerabilities: Vulnerability[]): number => {
+    if (vulnerabilities.length === 0) return 100;
+    
+    const critical = vulnerabilities.filter(v => v.severity === 'critical').length;
+    const high = vulnerabilities.filter(v => v.severity === 'high').length;
+    const medium = vulnerabilities.filter(v => v.severity === 'medium').length;
+    const low = vulnerabilities.filter(v => v.severity === 'low').length;
+    
+    const criticalWeight = critical * 10;
+    const highWeight = high * 5;
+    const mediumWeight = medium * 2;
+    const lowWeight = low * 1;
+    const totalWeight = criticalWeight + highWeight + mediumWeight + lowWeight;
+    
+    // Вычисляем score: 100 минус вес уязвимостей, но не меньше 0
+    const score = Math.max(0, 100 - Math.min(100, totalWeight));
+    return Math.round(score);
+  };
+
+  // Функция для получения цвета Security Score
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-400';
+    if (score >= 60) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+
   // Вычисляем статистику для каждого сервиса
   const getServiceStats = (serviceUrl: string) => {
     const servicePentests = pentests.filter(p => p.targetUrl === serviceUrl);
@@ -198,12 +253,21 @@ export default function Services() {
       ? (vulnerabilitiesMap[lastCompletedPentest.id] || 0)
       : 0;
     
+    // Получаем уязвимости для вычисления Security Score
+    const vulnerabilities = lastCompletedPentest?.id 
+      ? (vulnerabilitiesDataMap[lastCompletedPentest.id] || [])
+      : [];
+    
+    // Вычисляем Security Score
+    const securityScore = calculateSecurityScore(vulnerabilities);
+    
     return {
       total: servicePentests.length,
       completed,
       running,
       failed,
       vulnerabilities: vulnerabilitiesCount,
+      securityScore,
     };
   };
 
@@ -353,12 +417,21 @@ export default function Services() {
                         </div>
                         <p className="text-lg sm:text-xl font-bold text-white">{stats.failed}</p>
                       </div>
-                      <div className="bg-gray-800/50 rounded-lg p-2 sm:p-3 border border-gray-700 min-w-0 col-span-2">
+                      <div className="bg-gray-800/50 rounded-lg p-2 sm:p-3 border border-gray-700 min-w-0">
                         <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
                           <FiAlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-orange-400 flex-shrink-0" />
                           <span className="text-xs text-gray-400 truncate">Уязвимости</span>
                         </div>
                         <p className="text-lg sm:text-xl font-bold text-white">{stats.vulnerabilities}</p>
+                      </div>
+                      <div className="bg-gray-800/50 rounded-lg p-2 sm:p-3 border border-gray-700 min-w-0">
+                        <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+                          <FiBarChart2 className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400 flex-shrink-0" />
+                          <span className="text-xs text-gray-400 truncate">Оценка безопасности</span>
+                        </div>
+                        <p className={`text-lg sm:text-xl font-bold ${getScoreColor(stats.securityScore)}`}>
+                          {stats.securityScore}
+                        </p>
                       </div>
                     </div>
 
