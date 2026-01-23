@@ -22,7 +22,8 @@ const Logo = ({ size = "md", showText = true, className = "" }: LogoProps) => {
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           className={`${sizes[size].icon} text-red-600`}
-          style={{ display: 'block' }}
+          style={{ display: 'block', width: '100%', height: '100%' }}
+          data-testid="logo-svg"
         >
           {/* Sharp Shield Shape */}
           <path
