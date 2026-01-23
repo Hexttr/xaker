@@ -10,7 +10,8 @@ import './App.css';
 
 function App() {
   // Определяем базовый путь: /app в production, / в development
-  const basename = (import.meta as any).env?.PROD ? '/app' : '/';
+  // Используем window.location для определения окружения
+  const basename = window.location.hostname === 'localhost' ? '/' : '/app';
   
   return (
     <BrowserRouter basename={basename}>
