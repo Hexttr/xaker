@@ -18,8 +18,6 @@ console.log('App.tsx: Function defined, exporting...');
 
 export default App;
 
-export default App;
-
 
 
 
