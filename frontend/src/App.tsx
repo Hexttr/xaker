@@ -15,6 +15,9 @@ function App() {
   const pathname = window.location.pathname;
   const basename = pathname.startsWith('/app') ? '/app' : '/';
   
+  // Логируем для отладки
+  console.log('App: pathname =', pathname, 'basename =', basename);
+  
   return (
     <BrowserRouter basename={basename}>
       <Routes>
