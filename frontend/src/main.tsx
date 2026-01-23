@@ -3,7 +3,12 @@ console.log('main.tsx: Starting module execution');
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+console.log('main.tsx: React and QueryClient imported');
+
+console.log('main.tsx: About to import App...');
 import App from './App';
+console.log('main.tsx: App imported, type:', typeof App, 'value:', App);
+
 import './index.css';
 
 console.log('main.tsx: All imports completed');
