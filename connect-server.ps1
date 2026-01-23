@@ -9,3 +9,5 @@ Write-Host "Подключение к серверу $server..." -ForegroundColo
 # Принимаем host key автоматически при первом подключении
 & $puttyPath -ssh "$user@$server" -pw $password -batch "echo 'Connected successfully'"
 
+
+

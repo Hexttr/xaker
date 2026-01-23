@@ -31,3 +31,5 @@ pkill -f "vite" 2>/dev/null
 sleep 2
 echo "✅ Все процессы остановлены"
 
+
+

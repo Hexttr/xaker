@@ -30,3 +30,5 @@ foreach ($item in $filesToUpload) {
 
 Write-Host "Загрузка завершена!" -ForegroundColor Green
 
+
+

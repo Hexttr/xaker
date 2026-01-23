@@ -7,16 +7,26 @@ export default function Layout() {
 
   // Принудительно создаем стили для сетчатого фона, чтобы они не были удалены при сборке
   const gridStyle = {
-    backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px)',
+    backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.15) 1px, transparent 1px)',
     backgroundSize: '60px 60px',
-    opacity: 0.8
+    backgroundPosition: '0 0',
+    opacity: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: 0,
+    pointerEvents: 'none'
   };
 
   return (
     <div className="min-h-screen bg-black flex relative">
       {/* Grid Background - сетчатый фон как на landing page */}
       <div 
-        className="absolute inset-0 pointer-events-none z-0 bg-grid-dark"
+        className="bg-grid-dark"
         style={gridStyle}
         data-testid="grid-background"
       />

@@ -72,3 +72,5 @@ echo "⚠️  ВАЖНО: Перезапустите backend для примен
 echo "   Команда: cd backend && npm run dev"
 echo ""
 
+
+

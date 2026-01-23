@@ -82,3 +82,5 @@ pm2 save
 2. Логи Nginx: `sudo tail -f /var/log/nginx/error.log`
 3. Статус сервисов: `pm2 status` или `sudo systemctl status xaker-backend`
 
+
+
