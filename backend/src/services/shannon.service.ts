@@ -15,6 +15,8 @@ class ShannonService extends EventEmitter {
   private readonly SHANNON_DIST_PATH = join(this.SHANNON_PATH, 'dist', 'shannon.js');
   // Альтернативный путь напрямую к cli/ui.js
   private readonly SHANNON_CLI_PATH = join(this.SHANNON_PATH, 'dist', 'cli', 'ui.js');
+  // Правильная точка входа - temporal/client.js
+  private readonly SHANNON_MAIN_PATH = join(this.SHANNON_PATH, 'dist', 'temporal', 'client.js');
   private readonly USE_SIMULATION = process.env.USE_SIMULATION === 'true';
 
   /**
@@ -302,8 +304,8 @@ class ShannonService extends EventEmitter {
       args.push('--config', this.createTempConfig(pentestId, config));
     }
 
-    // Используем cli/ui.js напрямую - это правильная точка входа
-    const shannonEntryPoint = this.SHANNON_CLI_PATH;
+    // Используем temporal/client.js - это правильная точка входа с функцией startPipeline()
+    const shannonEntryPoint = this.SHANNON_MAIN_PATH;
     
     pentestService.addLog(pentestId, 'info', `📦 Запускаю Shannon: node ${shannonEntryPoint} ${args.join(' ')}`);
 
