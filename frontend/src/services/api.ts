@@ -11,22 +11,31 @@ api.interceptors.request.use(
     const token = localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      (window as any).__DEBUG__?.log('[API] Токен добавлен к запросу:', config.url);
+      (window as any).__DEBUG__?.log('[API] Токен добавлен к запросу:', config.method?.toUpperCase(), config.url);
+      (window as any).__DEBUG__?.log('[API] Заголовок Authorization:', `Bearer ${token.substring(0, 20)}...`);
     } else {
-      (window as any).__DEBUG__?.log('[API] Токен не найден для запроса:', config.url);
+      (window as any).__DEBUG__?.log('[API] ⚠️ Токен не найден для запроса:', config.method?.toUpperCase(), config.url);
+      console.error('[API] ⚠️ Токен не найден в localStorage для запроса:', config.url);
     }
     return config;
   },
   (error) => {
+    (window as any).__DEBUG__?.log('[API] Ошибка в request interceptor:', error);
     return Promise.reject(error);
   }
 );
 
 // Interceptor для обработки ошибок 401 (неавторизован)
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    (window as any).__DEBUG__?.log('[API] Ответ получен:', response.config.method?.toUpperCase(), response.config.url, response.status);
+    return response;
+  },
   (error) => {
+    (window as any).__DEBUG__?.log('[API] Ошибка ответа:', error.response?.status, error.config?.method?.toUpperCase(), error.config?.url);
     if (error.response?.status === 401) {
+      (window as any).__DEBUG__?.log('[API] ⚠️ 401 Unauthorized - удаляю токен');
+      console.error('[API] ⚠️ 401 Unauthorized для:', error.config?.url, 'Токен удален из localStorage');
       // Токен истек или невалиден
       localStorage.removeItem('authToken');
       // НЕ перезагружаем страницу - ProtectedRoute сам покажет модалку логина
