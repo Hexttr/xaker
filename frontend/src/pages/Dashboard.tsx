@@ -314,6 +314,8 @@ export default function Dashboard() {
                   Название пентеста
                 </label>
                 <input
+                  id="pentest-name"
+                  name="pentest-name"
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -327,6 +329,8 @@ export default function Dashboard() {
                   URL цели
                 </label>
                 <input
+                  id="pentest-url"
+                  name="pentest-url"
                   type="url"
                   value={formData.targetUrl}
                   onChange={(e) => setFormData({ ...formData, targetUrl: e.target.value })}

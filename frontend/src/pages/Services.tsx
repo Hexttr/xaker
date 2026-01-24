@@ -306,6 +306,8 @@ export default function Services() {
                     Название сервиса
                   </label>
                   <input
+                    id="service-name"
+                    name="service-name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -319,6 +321,8 @@ export default function Services() {
                     URL сервиса
                   </label>
                   <input
+                    id="service-url"
+                    name="service-url"
                     type="url"
                     value={formData.url}
                     onChange={(e) => setFormData({ ...formData, url: e.target.value })}

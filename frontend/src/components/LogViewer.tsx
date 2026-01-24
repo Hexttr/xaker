@@ -128,6 +128,8 @@ export default function LogViewer({
         </div>
         <div className="flex items-center gap-1.5">
           <input
+            id="log-filter"
+            name="log-filter"
             type="text"
             placeholder="Поиск в логах..."
             value={filter}

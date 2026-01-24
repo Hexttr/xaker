@@ -233,6 +233,8 @@ export default function Reports() {
                   Поиск
                 </label>
                 <input
+                  id="reports-search"
+                  name="reports-search"
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
