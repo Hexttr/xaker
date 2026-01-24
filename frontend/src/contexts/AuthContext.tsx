@@ -51,6 +51,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setToken(null);
         setUser(null);
         setIsLoading(false);
+        (window as any).__DEBUG__?.log('[AuthContext] isLoading установлен в false (нет токена)');
       }
     };
     
