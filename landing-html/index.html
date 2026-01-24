@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pentest.red — AI-powered непрерывное тестирование безопасности</title>
+  <meta name="description" content="Автоматизированный пентестинг в 100 раз дешевле традиционных решений. Защитите свою инфраструктуру 24/7 с помощью AI.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header -->
+  <header id="header" class="header">
+    <div class="container">
+      <nav class="nav">
+        <a href="#" class="logo-link">
+          <div class="logo">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-icon">
+              <path d="M16 2L4 7V15C4 22.5 9.5 29 16 30C22.5 29 28 22.5 28 15V7L16 2Z" fill="currentColor" fill-opacity="0.15" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+              <text x="16" y="19" text-anchor="middle" fill="currentColor" font-size="10" font-weight="700" font-family="system-ui, sans-serif" letter-spacing="-0.5">AI</text>
+            </svg>
+            <span class="logo-text">Pentest<span class="logo-text-accent">.red</span></span>
+          </div>
+        </a>
+
+        <div class="nav-desktop">
+          <a href="#problem" class="nav-link">Problem</a>
+          <a href="#solution" class="nav-link">Solution</a>
+          <a href="#features" class="nav-link">Features</a>
+          <a href="#cases" class="nav-link">Cases</a>
+          <a href="#pricing" class="nav-link">Pricing</a>
+        </div>
+
+        <div class="nav-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openLoginModal()">Login</button>
+          <button class="btn btn-hero" onclick="openDemoModal()">Request Demo</button>
+        </div>
+
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+          <svg class="menu-icon" id="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12h18M3 6h18M3 18h18"/>
+          </svg>
+          <svg class="menu-icon hidden" id="close-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </nav>
+
+      <div class="mobile-menu" id="mobile-menu">
+        <a href="#problem" class="mobile-nav-link" onclick="toggleMobileMenu()">Problem</a>
+        <a href="#solution" class="mobile-nav-link" onclick="toggleMobileMenu()">Solution</a>
+        <a href="#features" class="mobile-nav-link" onclick="toggleMobileMenu()">Features</a>
+        <a href="#cases" class="mobile-nav-link" onclick="toggleMobileMenu()">Cases</a>
+        <a href="#pricing" class="mobile-nav-link" onclick="toggleMobileMenu()">Pricing</a>
+        <div class="mobile-nav-actions">
+          <button class="btn btn-ghost" onclick="openLoginModal(); toggleMobileMenu();">Login</button>
+          <button class="btn btn-hero" onclick="openDemoModal(); toggleMobileMenu();">Request Demo</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="bg-grid"></div>
+      <div class="gradient-orb orb-1"></div>
+      <div class="gradient-orb orb-2"></div>
+      
+      <div class="container hero-container">
+        <div class="hero-content">
+          <div class="hero-text">
+            <div class="badge animate-fade-up">
+              <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <span>AI-Powered Security</span>
+            </div>
+
+            <h1 class="hero-title animate-fade-up delay-100">
+              Hackers find vulnerabilities in 15 minutes. <span class="text-gradient">We find them first.</span>
+            </h1>
+
+            <p class="hero-subtitle animate-fade-up delay-200">
+              <span class="font-semibold">$499/mo</span> — continuous AI pentesting 24/7. That's 100× cheaper than a one-time audit.
+            </p>
+
+            <div class="hero-cta animate-fade-up delay-300">
+              <button class="btn btn-hero btn-xl" onclick="openDemoModal()">
+                Free audit in 15 minutes
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </button>
+              <a href="#solution" class="hero-link">
+                How it works
+                <svg class="link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </a>
+            </div>
+
+            <div class="hero-stats animate-fade-up delay-400">
+              <div class="stat-card">
+                <div class="stat-header">
+                  <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                  </svg>
+                  <span class="stat-value">47</span>
+                </div>
+                <p class="stat-label">Critical/week</p>
+              </div>
+              <div class="stat-card">
+                <div class="stat-header">
+                  <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                  <span class="stat-value">0</span>
+                </div>
+                <p class="stat-label">Client breaches</p>
+              </div>
+              <div class="stat-card">
+                <div class="stat-header">
+                  <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <span class="stat-value">15 min</span>
+                </div>
+                <p class="stat-label">To first report</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-visual hidden-lg">
+            <!-- Hero Visual will be added here -->
+          </div>
+        </div>
+      </div>
+
+      <div class="scroll-indicator">
+        <div class="scroll-mouse">
+          <div class="scroll-dot"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TrustedBy Section -->
+    <section class="trusted-by">
+      <div class="container">
+        <p class="trusted-by-label">Integrates with your tech stack</p>
+        <div class="trusted-by-scroll">
+          <div class="scroll-mask scroll-mask-left"></div>
+          <div class="scroll-mask scroll-mask-right"></div>
+          <div class="scroll-content">
+            <div class="integration-item">
+              <svg class="integration-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
+              <span>GitHub</span>
+            </div>
+            <div class="integration-item">
+              <svg class="integration-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.565 21.8 24 17.302 24 12c0-6.627-5.373-12-12-12z"/>
+              </svg>
+              <span>GitLab</span>
+            </div>
+            <div class="integration-item">
+              <svg class="integration-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+              </svg>
+              <span>AWS</span>
+            </div>
+            <div class="integration-item">
+              <svg class="integration-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+              </svg>
+              <span>Azure</span>
+            </div>
+            <div class="integration-item">
+              <svg class="integration-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+              </svg>
+              <span>Jira</span>
+            </div>
+            <div class="integration-item">
+              <svg class="integration-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+              </svg>
+              <span>Jenkins</span>
+            </div>
+            <!-- Duplicate for seamless loop -->
+            <div class="integration-item">
+              <svg class="integration-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
+              <span>GitHub</span>
+            </div>
+            <div class="integration-item">
+              <svg class="integration-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.565 21.8 24 17.302 24 12c0-6.627-5.373-12-12-12z"/>
+              </svg>
+              <span>GitLab</span>
+            </div>
+            <div class="integration-item">
+              <svg class="integration-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+              </svg>
+              <span>AWS</span>
+            </div>
+            <div class="integration-item">
+              <svg class="integration-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+              </svg>
+              <span>Azure</span>
+            </div>
+            <div class="integration-item">
+              <svg class="integration-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+              </svg>
+              <span>Jira</span>
+            </div>
+            <div class="integration-item">
+              <svg class="integration-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+              </svg>
+              <span>Jenkins</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section id="problem" class="section section-problem">
+      <div class="section-divider"></div>
+      <div class="container">
+        <div class="section-header">
+          <div class="badge badge-destructive">
+            <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>The Problem</span>
+          </div>
+          <h2 class="section-title">Average cost of a data breach — <span class="text-gradient">$4.45M</span></h2>
+          <p class="section-subtitle">And traditional pentesting only checks you 1-2 times a year. How many vulnerabilities will appear between assessments?</p>
+        </div>
+        <div class="problem-grid">
+          <div class="problem-card">
+            <div class="problem-stat"><span class="text-gradient">$50K+</span><span class="stat-suffix">per assessment</span></div>
+            <div class="problem-header">
+              <div class="problem-icon-wrapper">
+                <svg class="problem-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="1" x2="12" y2="23"/>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+              </div>
+              <h3>Prohibitive Cost</h3>
+            </div>
+            <p>Traditional pentests cost $50,000–500,000 per assessment. Out of reach for most companies.</p>
+          </div>
+          <div class="problem-card">
+            <div class="problem-stat"><span class="text-gradient">1-2</span><span class="stat-suffix">times per year</span></div>
+            <div class="problem-header">
+              <div class="problem-icon-wrapper">
+                <svg class="problem-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+              <h3>Infrequent Testing</h3>
+            </div>
+            <p>Assessments are conducted 1-2 times a year. The rest of the time your infrastructure remains vulnerable.</p>
+          </div>
+          <div class="problem-card">
+            <div class="problem-stat"><span class="text-gradient">100+</span><span class="stat-suffix">changes/month</span></div>
+            <div class="problem-header">
+              <div class="problem-icon-wrapper">
+                <svg class="problem-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <polyline points="1 20 1 14 7 14"/>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+              </div>
+              <h3>Constant Changes</h3>
+            </div>
+            <p>Web applications change daily, creating new vulnerabilities between rare assessments.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Solution Section -->
+    <section id="solution" class="section section-solution">
+      <div class="solution-glow"></div>
+      <div class="container">
+        <div class="section-header">
+          <div class="badge">
+            <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            <span>Solution</span>
+          </div>
+          <h2 class="section-title">AI-powered platform for <span class="text-gradient">continuous pentesting</span></h2>
+          <p class="section-subtitle">Pentest.red automates the vulnerability discovery process using artificial intelligence and machine learning</p>
+        </div>
+        <div class="solution-content">
+          <div class="solution-text">
+            <h3>How your security transforms</h3>
+            <div class="transformation-list">
+              <div class="transformation-item">
+                <span class="transformation-before">2 pentests per year</span>
+                <svg class="transformation-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+                <span class="transformation-after">Continuous protection 24/7</span>
+              </div>
+              <div class="transformation-item">
+                <span class="transformation-before">$50,000+ per assessment</span>
+                <svg class="transformation-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+                <span class="transformation-after">From $499/mo</span>
+              </div>
+              <div class="transformation-item">
+                <span class="transformation-before">Report in 2 weeks</span>
+                <svg class="transformation-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+                <span class="transformation-after">Real-time alerts</span>
+              </div>
+              <div class="transformation-item">
+                <span class="transformation-before">Manual test launches</span>
+                <svg class="transformation-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+                <span class="transformation-after">Auto CI/CD integration</span>
+              </div>
+            </div>
+            <button class="btn btn-hero btn-lg" onclick="openDemoModal()">
+              Start free trial
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+          <div class="solution-visual hidden-lg">
+            <!-- AI Visual placeholder -->
+          </div>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon-wrapper">
+              <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <div class="metric-value">1000+</div>
+            <h4>Scanning Rules</h4>
+            <p>Constantly updated threat database</p>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon-wrapper">
+              <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="1" x2="12" y2="23"/>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+            <div class="metric-value">50+</div>
+            <h4>Integrations</h4>
+            <p>With popular DevOps tools</p>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon-wrapper">
+              <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+            <div class="metric-value">99.9%</div>
+            <h4>Uptime</h4>
+            <p>Guaranteed service availability</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features, Cases, Comparison, Pricing, FAQ, CTA, Footer sections will be added in next update -->
+    <!-- For now, adding placeholders -->
+
+    <!-- Pricing Section (with updated prices) -->
+    <section id="pricing" class="section section-pricing">
+      <div class="section-divider"></div>
+      <div class="container">
+        <div class="section-header">
+          <div class="badge">
+            <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            <span>Pricing</span>
+          </div>
+          <h2 class="section-title">Transparent <span class="text-gradient">pricing</span></h2>
+          <p class="section-subtitle">Choose the plan that fits your business. Start with a free trial.</p>
+        </div>
+        <div class="pricing-grid">
+          <div class="pricing-card">
+            <div class="pricing-header">
+              <h3>Starter</h3>
+              <span class="pricing-audience">Startups, SaaS</span>
+            </div>
+            <p class="pricing-description">Package of 3 audits: 1 app 3 times or 3 apps once each</p>
+            <div class="pricing-price">
+              <span class="price-amount">$499</span>
+            </div>
+            <ul class="pricing-features">
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>3 audits in package</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Full vulnerability report</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Attack Chain visualization</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Email support (24h SLA)</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>GitHub/GitLab integration</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>OWASP Top 10 coverage</li>
+            </ul>
+            <button class="btn btn-hero-outline btn-lg w-full" onclick="openDemoModal()">
+              Buy Package
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+          <div class="pricing-card pricing-card-popular">
+            <div class="popular-badge">Popular</div>
+            <div class="pricing-header">
+              <h3>Pro</h3>
+              <span class="pricing-audience">Mid-market, SaaS</span>
+            </div>
+            <p class="pricing-description">For growing companies with security teams</p>
+            <div class="pricing-price">
+              <span class="price-amount">$2499</span>
+              <span class="price-period">/mo</span>
+            </div>
+            <ul class="pricing-features">
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Up to 15 applications</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Continuous scanning 24/7</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>AI vulnerability analysis</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>CI/CD pipeline integration</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Priority support (4h SLA)</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>API access</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Real-time alerts</li>
+            </ul>
+            <button class="btn btn-hero btn-lg w-full" onclick="openDemoModal()">
+              Choose Pro
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+          <div class="pricing-card">
+            <div class="pricing-header">
+              <h3>Enterprise</h3>
+              <span class="pricing-audience">Enterprise, Fintech</span>
+            </div>
+            <p class="pricing-description">For corporations with compliance requirements</p>
+            <div class="pricing-price">
+              <span class="price-amount">Custom</span>
+            </div>
+            <ul class="pricing-features">
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Unlimited applications</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Dedicated Success Manager</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>SLA 99.9% + 1h response</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>On-premise deployment</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Custom integrations</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Team training</li>
+              <li><svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Pentest experts on demand</li>
+            </ul>
+            <button class="btn btn-hero-outline btn-lg w-full" onclick="openDemoModal()">
+              Request Demo
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-brand">
+            <a href="#" class="logo-link">
+              <div class="logo">
+                <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-icon">
+                  <path d="M16 2L4 7V15C4 22.5 9.5 29 16 30C22.5 29 28 22.5 28 15V7L16 2Z" fill="currentColor" fill-opacity="0.15" stroke="currentColor" stroke-width="1.5" stroke-linejoin="miter"/>
+                  <text x="16" y="19" text-anchor="middle" fill="currentColor" font-size="10" font-weight="700" font-family="system-ui, sans-serif" letter-spacing="-0.5">AI</text>
+                </svg>
+                <span class="logo-text">Pentest<span class="logo-text-accent">.red</span></span>
+              </div>
+            </a>
+            <p>AI-powered continuous security for modern business. Enterprise-level protection at an affordable price.</p>
+            <div class="footer-compliance">
+              <span>Compliance:</span>
+              <div class="compliance-badges">
+                <span>ISO 27001</span>
+                <span>GDPR</span>
+                <span>SOC2</span>
+              </div>
+            </div>
+          </div>
+          <div class="footer-links">
+            <div class="footer-column">
+              <h4>Product</h4>
+              <a href="#features">Features</a>
+              <a href="#pricing">Pricing</a>
+              <a href="#cases">Cases</a>
+            </div>
+            <div class="footer-column">
+              <h4>Company</h4>
+              <a href="#solution">About Us</a>
+              <a href="#contact">Contact</a>
+            </div>
+            <div class="footer-column">
+              <h4>Legal</h4>
+              <a href="#privacy">Privacy Policy</a>
+              <a href="#terms">Terms of Service</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>&copy; 2024 Pentest.red. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+
+  </main>
+
+  <!-- Modals -->
+  <div id="login-modal" class="modal">
+    <div class="modal-backdrop" onclick="closeLoginModal()"></div>
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeLoginModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+      <h2 class="modal-title">Login</h2>
+      <p class="modal-subtitle">Enter your credentials to access the platform</p>
+      <form id="login-form" class="modal-form">
+        <div class="form-group">
+          <label for="username">Username *</label>
+          <input type="text" id="username" name="username" required placeholder="Enter your username">
+        </div>
+        <div class="form-group">
+          <label for="password">Password *</label>
+          <input type="password" id="password" name="password" required placeholder="Enter your password">
+        </div>
+        <div id="login-error" class="form-error hidden"></div>
+        <button type="submit" class="btn btn-hero btn-lg w-full">
+          <span id="login-btn-text">Login</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="demo-modal" class="modal">
+    <div class="modal-backdrop" onclick="closeDemoModal()"></div>
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeDemoModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+      <h2 class="modal-title">Request Demo</h2>
+      <p class="modal-subtitle">Fill out the form and we will contact you shortly.</p>
+      <div id="demo-success" class="demo-success hidden">
+        <div class="success-icon">✓</div>
+        <p>Thank you! We will contact you shortly.</p>
+      </div>
+      <form id="demo-form" class="modal-form">
+        <div class="form-group">
+          <label for="name">Name *</label>
+          <input type="text" id="name" name="name" required placeholder="Enter your name">
+        </div>
+        <div class="form-group">
+          <label for="phone">Phone *</label>
+          <input type="tel" id="phone" name="phone" required placeholder="+7 (999) 123-45-67">
+        </div>
+        <div id="demo-error" class="form-error hidden"></div>
+        <button type="submit" class="btn btn-hero btn-lg w-full">
+          <span id="demo-btn-text">Submit</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Sticky CTA -->
+  <div id="sticky-cta" class="sticky-cta hidden">
+    <button class="sticky-cta-close" onclick="dismissStickyCTA()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+    </button>
+    <button class="btn btn-hero btn-lg" onclick="openDemoModal()">
+      Request Demo
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+    </button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
