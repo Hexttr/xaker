@@ -9,28 +9,33 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 10  # Максимальное время выполнения
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-    
     - name: Deploy to server
-      uses: appleboy/ssh-action@master
+      uses: appleboy/ssh-action@v1.0.3  # Фиксированная версия вместо master (быстрее)
       with:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USER }}
         password: ${{ secrets.SERVER_PASSWORD }}
         port: ${{ secrets.SERVER_PORT }}
         script: |
+          set -e  # Остановка при ошибке
+          echo "🚀 Starting deployment..."
+          
+          echo "📥 [1/4] Pulling latest changes..."
           cd /root/xaker
           git pull origin prod
+          
+          echo "🔨 [2/4] Building backend..."
           cd backend
           npm run build
+          
+          echo "🔄 [3/4] Restarting backend..."
           pm2 restart xaker-backend || (pm2 start npm --name xaker-backend -- run start)
+          
+          echo "✅ [4/4] Checking status..."
           pm2 status xaker-backend
+          
+          echo "🎉 Deployment complete!"
 
