@@ -141,6 +141,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   (window as any).__DEBUG__?.log('[AuthContext] Рендеринг AuthProvider, isLoading:', isLoading, 'token:', token ? 'есть' : 'нет', 'user:', user ? 'есть' : 'нет', 'isAuthenticated:', !!token && !!user);
   
+  // Логируем перед рендерингом children
+  (window as any).__DEBUG__?.log('[AuthContext] Рендерим children (App)');
+  
   return (
     <AuthContext.Provider
       value={{
@@ -152,7 +155,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         isLoading,
       }}
     >
-      {(window as any).__DEBUG__?.log('[AuthContext] Рендерим children (App)'), children}
+      {children}
     </AuthContext.Provider>
   );
 };
