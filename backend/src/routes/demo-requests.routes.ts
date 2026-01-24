@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { promises as fs } from 'fs';
 import path from 'path';
+import fetch from 'node-fetch';
 
 const router = Router();
 
@@ -17,6 +18,46 @@ async function ensureFileExists() {
   }
 }
 
+// Отправить уведомление в Telegram
+async function sendTelegramNotification(name: string, phone: string) {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+
+  if (!botToken || !chatId) {
+    console.log('⚠️ Telegram не настроен: TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID не установлены');
+    return;
+  }
+
+  try {
+    const message = `🆕 *New Demo Request*\n\n` +
+      `👤 *Name:* ${name}\n` +
+      `📞 *Phone:* ${phone}\n` +
+      `🕐 *Time:* ${new Date().toLocaleString('en-US', { timeZone: 'UTC' })} UTC`;
+
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: 'Markdown',
+      }),
+    });
+
+    if (response.ok) {
+      console.log('✅ Уведомление отправлено в Telegram');
+    } else {
+      const error = await response.text();
+      console.error('❌ Ошибка отправки в Telegram:', error);
+    }
+  } catch (error: any) {
+    console.error('❌ Ошибка при отправке в Telegram:', error?.message || error);
+  }
+}
+
 // Сохранить заявку на демо
 router.post('/', async (req: Request, res: Response) => {
   try {
@@ -25,7 +66,7 @@ router.post('/', async (req: Request, res: Response) => {
     // Валидация
     if (!name || !phone) {
       return res.status(400).json({
-        error: 'Необходимо указать имя и телефон',
+        error: 'Name and phone are required',
       });
     }
 
@@ -52,15 +93,20 @@ router.post('/', async (req: Request, res: Response) => {
 
     console.log(`✅ Новая заявка на демо: ${name} - ${phone}`);
 
+    // Отправляем уведомление в Telegram (не блокируем ответ)
+    sendTelegramNotification(name, phone).catch(err => {
+      console.error('Ошибка отправки Telegram (не критично):', err);
+    });
+
     res.status(201).json({
       success: true,
-      message: 'Заявка успешно отправлена',
+      message: 'Request submitted successfully',
       id: newRequest.id,
     });
   } catch (error: any) {
     console.error('❌ Ошибка при сохранении заявки:', error);
     res.status(500).json({
-      error: 'Ошибка при сохранении заявки',
+      error: 'Error saving request',
       details: error?.message || String(error),
     });
   }
@@ -76,7 +122,7 @@ router.get('/', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('❌ Ошибка при чтении заявок:', error);
     res.status(500).json({
-      error: 'Ошибка при чтении заявок',
+      error: 'Error reading requests',
       details: error?.message || String(error),
     });
   }
