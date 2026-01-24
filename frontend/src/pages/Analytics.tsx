@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { pentestApi } from '../services/api';
 import { serviceApi } from '../services/api';
-import { FiBarChart2, FiServer, FiLoader, FiTrendingUp, FiCheckCircle, FiAlertTriangle } from 'react-icons/fi';
+import { FiBarChart2, FiLoader, FiTrendingUp, FiCheckCircle, FiAlertTriangle } from 'react-icons/fi';
 
 export default function Analytics() {
   const [selectedServiceId, setSelectedServiceId] = useState<string>('');

@@ -194,12 +194,12 @@ export default function Home() {
       .slice(0, 5);
   }, [filteredPentests]);
 
-  // Критические уязвимости (топ 10)
-  const criticalVulnerabilities = useMemo(() => {
-    // Здесь нужно собрать все уязвимости из завершенных пентестов
-    // Пока возвращаем пустой массив, так как нужна более сложная логика
-    return [];
-  }, []);
+  // Критические уязвимости (топ 10) - закомментировано, пока не используется
+  // const criticalVulnerabilities = useMemo(() => {
+  //   // Здесь нужно собрать все уязвимости из завершенных пентестов
+  //   // Пока возвращаем пустой массив, так как нужна более сложная логика
+  //   return [];
+  // }, []);
 
   const getStatusColor = (status: Pentest['status']) => {
     switch (status) {
@@ -445,7 +445,7 @@ export default function Home() {
                       fontWeight: '700',
                       marginBottom: '4px',
                     }}
-                    formatter={(value: number | undefined, name: string) => [`${value ?? 0}`, name]}
+                    formatter={(value: number | undefined, name?: string) => [`${value ?? 0}`, name ?? '']}
                   />
                   <Legend
                     wrapperStyle={{ color: '#e5e7eb', fontSize: '13px', fontWeight: '500' }}

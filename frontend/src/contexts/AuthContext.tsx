@@ -36,13 +36,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Загружаем токен из localStorage при монтировании
   useEffect(() => {
     const checkAuth = async () => {
+      console.log('[AuthContext] Проверка аутентификации...');
       const storedToken = localStorage.getItem('authToken');
+      console.log('[AuthContext] Токен в localStorage:', storedToken ? 'найден' : 'не найден');
+      
       if (storedToken) {
         setToken(storedToken);
         // Проверяем валидность токена
         await verifyToken(storedToken);
       } else {
         // Нет токена - точно не авторизован
+        console.log('[AuthContext] Токен не найден, пользователь не авторизован');
         setToken(null);
         setUser(null);
         setIsLoading(false);
@@ -55,6 +59,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Проверка валидности токена
   const verifyToken = async (tokenToVerify: string) => {
     try {
+      console.log('[AuthContext] Проверка токена...');
       const response = await fetch('/api/auth/verify', {
         headers: {
           'Authorization': `Bearer ${tokenToVerify}`,
@@ -63,21 +68,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('[AuthContext] Токен валиден, пользователь:', data.user);
         setUser(data.user);
         setToken(tokenToVerify);
       } else {
         // Токен невалиден, удаляем
+        console.log('[AuthContext] Токен невалиден, удаляем');
         localStorage.removeItem('authToken');
         setToken(null);
         setUser(null);
       }
     } catch (error) {
-      console.error('Ошибка при проверке токена:', error);
+      console.error('[AuthContext] Ошибка при проверке токена:', error);
       localStorage.removeItem('authToken');
       setToken(null);
       setUser(null);
     } finally {
       setIsLoading(false);
+      console.log('[AuthContext] Проверка завершена, isLoading = false');
     }
   };
 

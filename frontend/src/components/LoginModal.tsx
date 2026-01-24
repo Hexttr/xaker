@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { FiX } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 
 interface LoginModalProps {
@@ -51,7 +51,7 @@ const LoginModal = ({ isOpen, onClose, onSuccess }: LoginModalProps) => {
           className="absolute top-4 right-4 p-2 rounded-md hover:bg-gray-800 transition-colors"
           aria-label="Close"
         >
-          <X className="h-5 w-5 text-gray-400" />
+          <FiX className="h-5 w-5 text-gray-400" />
         </button>
 
         {/* Content */}
