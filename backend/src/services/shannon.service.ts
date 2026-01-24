@@ -11,7 +11,11 @@ import fetch from 'node-fetch';
  */
 class ShannonService extends EventEmitter {
   private runningPentests: Map<string, ChildProcess> = new Map();
-  private readonly SHANNON_PATH = resolve(process.cwd(), '../shannon');
+  // Путь к Shannon можно настроить через переменную окружения SHANNON_PATH
+  // По умолчанию ищем в ../shannon относительно текущей директории
+  private readonly SHANNON_PATH = process.env.SHANNON_PATH 
+    ? resolve(process.env.SHANNON_PATH)
+    : resolve(process.cwd(), '../shannon');
   private readonly SHANNON_DIST_PATH = join(this.SHANNON_PATH, 'dist', 'shannon.js');
   // Альтернативный путь напрямую к cli/ui.js
   private readonly SHANNON_CLI_PATH = join(this.SHANNON_PATH, 'dist', 'cli', 'ui.js');
@@ -23,7 +27,27 @@ class ShannonService extends EventEmitter {
    * Проверить, доступен ли Shannon
    */
   isShannonAvailable(): boolean {
-    return existsSync(this.SHANNON_DIST_PATH);
+    // Проверяем реальную точку входа, которая используется для запуска
+    const mainPathExists = existsSync(this.SHANNON_MAIN_PATH);
+    
+    // Также проверяем альтернативные пути на случай разных структур сборки
+    const distPathExists = existsSync(this.SHANNON_DIST_PATH);
+    const cliPathExists = existsSync(this.SHANNON_CLI_PATH);
+    
+    // Проверяем что директория Shannon существует
+    const shannonDirExists = existsSync(this.SHANNON_PATH);
+    
+    // Логируем для отладки
+    if (!mainPathExists) {
+      console.log(`[Shannon] SHANNON_MAIN_PATH not found: ${this.SHANNON_MAIN_PATH}`);
+      console.log(`[Shannon] SHANNON_PATH exists: ${shannonDirExists} (${this.SHANNON_PATH})`);
+      console.log(`[Shannon] SHANNON_DIST_PATH exists: ${distPathExists}`);
+      console.log(`[Shannon] SHANNON_CLI_PATH exists: ${cliPathExists}`);
+      console.log(`[Shannon] process.cwd(): ${process.cwd()}`);
+    }
+    
+    // Возвращаем true если хотя бы один путь существует
+    return mainPathExists || distPathExists || cliPathExists;
   }
 
   /**
@@ -358,8 +382,22 @@ class ShannonService extends EventEmitter {
       args.push('--config', this.createTempConfig(pentestId, config));
     }
 
-    // Используем temporal/client.js - это правильная точка входа с функцией startPipeline()
-    const shannonEntryPoint = this.SHANNON_MAIN_PATH;
+    // Определяем точку входа - пробуем разные варианты
+    let shannonEntryPoint: string;
+    if (existsSync(this.SHANNON_MAIN_PATH)) {
+      shannonEntryPoint = this.SHANNON_MAIN_PATH;
+    } else if (existsSync(this.SHANNON_CLI_PATH)) {
+      shannonEntryPoint = this.SHANNON_CLI_PATH;
+    } else if (existsSync(this.SHANNON_DIST_PATH)) {
+      shannonEntryPoint = this.SHANNON_DIST_PATH;
+    } else {
+      throw new Error(`Shannon entry point not found. Checked paths:
+        - ${this.SHANNON_MAIN_PATH}
+        - ${this.SHANNON_CLI_PATH}
+        - ${this.SHANNON_DIST_PATH}
+        Current working directory: ${process.cwd()}
+        Shannon path: ${this.SHANNON_PATH}`);
+    }
     
     pentestService.addLog(pentestId, 'info', `📦 Запускаю Shannon: node ${shannonEntryPoint} ${args.join(' ')}`);
 
@@ -418,6 +456,14 @@ class ShannonService extends EventEmitter {
     
     pentestService.addLog(pentestId, 'info', `🚀 Запускаю процесс: node ${shannonEntryPoint} ${args.join(' ')}`);
     pentestService.addLog(pentestId, 'info', `📂 Рабочая директория: ${this.SHANNON_PATH}`);
+    
+    // Проверяем что рабочая директория существует
+    if (!existsSync(this.SHANNON_PATH)) {
+      throw new Error(`Shannon directory not found: ${this.SHANNON_PATH}. Current working directory: ${process.cwd()}`);
+    }
+    
+    pentestService.addLog(pentestId, 'info', `📂 Рабочая директория Shannon: ${this.SHANNON_PATH}`);
+    pentestService.addLog(pentestId, 'info', `📄 Точка входа: ${shannonEntryPoint}`);
     
     const shannonProcess = spawn('node', [shannonEntryPoint, ...args], {
       cwd: this.SHANNON_PATH,

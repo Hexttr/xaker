@@ -1,0 +1,23 @@
+# Server Configuration Example
+# Copy this file to .server-config.local and fill in your credentials
+# This file is in .gitignore and will NOT be committed to git
+
+SERVER_HOST=5.129.235.52
+SERVER_USER=root
+SERVER_PASSWORD=cY7^kCCA_6uQ5S
+SERVER_PORT=22
+
+# Optional: SSH key path (if using key-based authentication)
+# SSH_KEY_PATH=~/.ssh/id_rsa
+
+# Server directories
+SERVER_PROJECT_DIR=/root/xaker
+SERVER_BACKEND_DIR=/root/xaker/backend
+SERVER_FRONTEND_DIR=/root/xaker/frontend
+SERVER_LANDING_DIR=/var/www/pentest.red/landing
+
+# Local directories (relative to project root)
+LOCAL_BACKEND_DIR=backend
+LOCAL_FRONTEND_DIR=frontend
+LOCAL_LANDING_DIR=landing
+

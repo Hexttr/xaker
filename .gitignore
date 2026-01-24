@@ -82,11 +82,18 @@ backend/users.json
 *.ps1
 !deploy-*.ps1.example
 !*.ps1.example
+# Allow scripts in scripts/ directory (they use .server-config.local)
+!scripts/*.ps1
+!scripts/*.py
 
 # Server credentials (if any config files contain them)
 *credentials*
 *secrets*
 *passwords*
+
+# Server configuration file (contains SSH credentials)
+# This file should be created locally from .server-config.local.example
+.server-config.local
 
 # API keys in any format
 *api-key*
@@ -98,4 +105,38 @@ backend/users.json
 *ssh-key*
 *id_rsa*
 *id_ed25519*
+
+# ============================================
+# SERVER ACCESS APPROACH DOCUMENTATION
+# ============================================
+# 
+# Для работы с сервером Ubuntu используется безопасный подход:
+#
+# 1. КОНФИГУРАЦИЯ:
+#    - Создайте файл .server-config.local из .server-config.local.example
+#    - Заполните SSH данные (хост, пользователь, пароль/ключ)
+#    - Файл .server-config.local находится в .gitignore и НЕ коммитится
+#
+# 2. ИНСТРУМЕНТЫ:
+#    - PowerShell скрипты в scripts/ (для Windows)
+#    - Python скрипты в scripts/ (кроссплатформенные)
+#    - Используют модули server-utils.ps1 или server-utils.py
+#
+# 3. БЕЗОПАСНОСТЬ:
+#    - SSH пароли хранятся только локально в .server-config.local
+#    - Рекомендуется использовать SSH ключи вместо паролей
+#    - Все скрипты читают конфиг из .server-config.local
+#
+# 4. ИСПОЛЬЗОВАНИЕ:
+#    - Подключение: .\scripts\connect-server.ps1
+#    - Деплой backend: .\scripts\deploy-backend.ps1
+#    - Деплой frontend: .\scripts\deploy-frontend.ps1
+#    - Статус сервера: .\scripts\server-status.ps1
+#
+# 5. ТРЕБОВАНИЯ:
+#    - Windows: OpenSSH (встроен в Windows 10+) или PuTTY (plink.exe/pscp.exe)
+#    - Linux/Mac: OpenSSH (обычно установлен)
+#    - Python: pip install paramiko (для password-based auth)
+#
+# ============================================
 
