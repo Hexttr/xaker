@@ -48,9 +48,18 @@ if (!rootElement) {
 }
 
 // Логи, которые не удаляются при минификации
-window.__DEBUG__ = window.__DEBUG__ || {};
-window.__DEBUG__.log = function(...args) {
-  console.log('[DEBUG]', ...args);
+declare global {
+  interface Window {
+    __DEBUG__?: {
+      log: (...args: any[]) => void;
+    };
+  }
+}
+
+window.__DEBUG__ = window.__DEBUG__ || {
+  log: function(...args: any[]) {
+    console.log('[DEBUG]', ...args);
+  }
 };
 
 window.__DEBUG__.log('[main.tsx] Инициализация приложения...');
@@ -66,7 +75,7 @@ root.render(
   </React.StrictMode>
 );
 
-window.__DEBUG__.log('[main.tsx] Приложение инициализировано');
+window.__DEBUG__?.log('[main.tsx] Приложение инициализировано');
 
 
 
