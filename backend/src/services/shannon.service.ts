@@ -354,34 +354,41 @@ class ShannonService extends EventEmitter {
     pentestService.addLog(pentestId, 'info', `   HTTP_PROXY: ${env.HTTP_PROXY || 'не установлен'}`);
     pentestService.addLog(pentestId, 'info', `   HTTPS_PROXY: ${env.HTTPS_PROXY || 'не установлен'}`);
     
+    pentestService.addLog(pentestId, 'info', `🚀 Запускаю процесс: node ${shannonEntryPoint} ${args.join(' ')}`);
+    pentestService.addLog(pentestId, 'info', `📂 Рабочая директория: ${this.SHANNON_PATH}`);
+    
     const shannonProcess = spawn('node', [shannonEntryPoint, ...args], {
       cwd: this.SHANNON_PATH,
       env: env,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
+    pentestService.addLog(pentestId, 'info', `✅ Процесс запущен, PID: ${shannonProcess.pid}`);
     this.runningPentests.set(pentestId, shannonProcess);
 
     // Перехватываем stdout (логи)
     shannonProcess.stdout.on('data', (data: Buffer) => {
-      const lines = data.toString().split('\n').filter(line => line.trim());
+      const output = data.toString();
+      const lines = output.split('\n').filter(line => line.trim());
       lines.forEach(line => {
-        pentestService.addLog(pentestId, 'info', line);
+        pentestService.addLog(pentestId, 'info', `[Shannon] ${line}`);
       });
     });
 
     // Перехватываем stderr (ошибки)
     shannonProcess.stderr.on('data', (data: Buffer) => {
-      const lines = data.toString().split('\n').filter(line => line.trim());
+      const output = data.toString();
+      const lines = output.split('\n').filter(line => line.trim());
       lines.forEach(line => {
-        pentestService.addLog(pentestId, 'error', line);
+        pentestService.addLog(pentestId, 'error', `[Shannon ERROR] ${line}`);
       });
     });
 
     // Обработка завершения
     return new Promise((resolve, reject) => {
-      shannonProcess.on('close', (code) => {
+      shannonProcess.on('close', (code, signal) => {
         this.runningPentests.delete(pentestId);
+        pentestService.addLog(pentestId, 'info', `🔚 Процесс завершен: код=${code}, signal=${signal || 'none'}`);
         
         if (code === 0) {
           pentestService.updatePentestStatus(pentestId, 'completed');
@@ -389,7 +396,7 @@ class ShannonService extends EventEmitter {
           resolve();
         } else {
           pentestService.updatePentestStatus(pentestId, 'failed');
-          pentestService.addLog(pentestId, 'error', `❌ Пентест завершился с кодом ${code}`);
+          pentestService.addLog(pentestId, 'error', `❌ Пентест завершился с кодом ${code}${signal ? ` (signal: ${signal})` : ''}`);
           reject(new Error(`Shannon завершился с кодом ${code}`));
         }
       });
@@ -398,7 +405,13 @@ class ShannonService extends EventEmitter {
         this.runningPentests.delete(pentestId);
         pentestService.updatePentestStatus(pentestId, 'failed');
         pentestService.addLog(pentestId, 'error', `❌ Ошибка запуска Shannon: ${error.message}`);
+        pentestService.addLog(pentestId, 'error', `❌ Stack: ${error.stack || 'нет'}`);
         reject(error);
+      });
+      
+      // Логируем, когда процесс начинает выполняться
+      shannonProcess.on('spawn', () => {
+        pentestService.addLog(pentestId, 'info', '🎬 Процесс Shannon запущен (spawn event)');
       });
     });
   }
