@@ -37,8 +37,10 @@ app.get('/api/health', (req, res) => {
 console.log('📦 Загрузка routes...');
 import pentestRoutes from './routes/pentest.routes';
 import serviceRoutes from './routes/service.routes';
+import demoRequestsRoutes from './routes/demo-requests.routes';
 app.use('/api/pentests', pentestRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/demo-requests', demoRequestsRoutes);
 console.log('✅ Routes загружены успешно');
 
 // WebSocket connection
@@ -60,6 +62,7 @@ httpServer.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`   - GET  /api/health`);
   console.log(`   - GET  /api/pentests`);
   console.log(`   - POST /api/pentests`);
+  console.log(`   - POST /api/demo-requests`);
 });
 
 // Error handling
