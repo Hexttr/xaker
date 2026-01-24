@@ -41,10 +41,12 @@ import authRoutes from './routes/auth.routes';
 import pentestRoutes from './routes/pentest.routes';
 import serviceRoutes from './routes/service.routes';
 import demoRequestsRoutes from './routes/demo-requests.routes';
+import deployRoutes from './routes/deploy.routes';
 
 // Публичные роуты (не требуют аутентификации)
 app.use('/api/auth', authRoutes);
 app.use('/api/demo-requests', demoRequestsRoutes);
+app.use('/api/deploy', deployRoutes);
 
 // Временно отключена аутентификация для работы с сервисами и пентестами
 // import { authMiddleware } from './middleware/auth.middleware';
