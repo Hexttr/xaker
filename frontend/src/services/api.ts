@@ -11,6 +11,9 @@ api.interceptors.request.use(
     const token = localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      (window as any).__DEBUG__?.log('[API] Токен добавлен к запросу:', config.url);
+    } else {
+      (window as any).__DEBUG__?.log('[API] Токен не найден для запроса:', config.url);
     }
     return config;
   },
