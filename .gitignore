@@ -70,3 +70,7 @@ backend/pentests/
 # Pentests metadata (JSON files with pentest data)
 backend/pentests-data/
 
+# Compiled JS files in src (should use .tsx instead)
+frontend/src/**/*.js
+frontend/src/**/**/*.js
+

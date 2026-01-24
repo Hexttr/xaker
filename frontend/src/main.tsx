@@ -16,12 +16,43 @@ const queryClient = new QueryClient({
   },
 });
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+// АГРЕССИВНАЯ очистка Service Workers при загрузке React
+if ('serviceWorker' in navigator) {
+  // Удаляем все регистрации
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    console.log('[React] Найдено Service Workers:', registrations.length);
+    registrations.forEach(function(registration) {
+      registration.unregister().then(function(success) {
+        console.log('[React] Service Worker удален:', success);
+      }).catch(function(error) {
+        console.error('[React] Ошибка удаления:', error);
+      });
+    });
+  });
+  
+  // Очищаем кэши
+  if ('caches' in window) {
+    caches.keys().then(function(names) {
+      console.log('[React] Найдено кэшей:', names.length);
+      names.forEach(function(name) {
+        caches.delete(name);
+      });
+    });
+  }
+}
+
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error('Root element not found!');
+}
+
+const root = ReactDOM.createRoot(rootElement);
+root.render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
     </QueryClientProvider>
-  </React.StrictMode>,
+  </React.StrictMode>
 );
 
 

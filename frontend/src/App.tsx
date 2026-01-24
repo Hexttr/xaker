@@ -9,8 +9,12 @@ import About from './pages/About';
 import './App.css';
 
 function App() {
+  // Определяем базовый путь: /app в production, / в development
+  // Используем window.location для определения окружения
+  const basename = window.location.hostname === 'localhost' ? '/' : '/app';
+  
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
