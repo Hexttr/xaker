@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, X } from "lucide-react";
-import RequestDemoModal from "./RequestDemoModal";
+import { useRequestDemo } from "@/contexts/RequestDemoContext";
 
 const StickyCTA = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
-  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const { openModal } = useRequestDemo();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,12 +31,11 @@ const StickyCTA = () => {
         >
           <X className="h-3 w-3 text-muted-foreground" />
         </button>
-        <Button variant="hero" size="lg" className="shadow-xl group" onClick={() => setIsDemoModalOpen(true)}>
+        <Button variant="hero" size="lg" className="shadow-xl group" onClick={openModal}>
           Request Demo
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </Button>
       </div>
-      <RequestDemoModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
     </div>
   );
 };

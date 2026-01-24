@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Mail, MessageCircle, Linkedin, Shield } from "lucide-react";
+import { useRequestDemo } from "@/contexts/RequestDemoContext";
 
 const CTA = () => {
+  const { openModal } = useRequestDemo();
+  
   return (
     <section className="py-24 bg-background relative overflow-hidden">
       {/* Background effects */}
@@ -24,14 +27,12 @@ const CTA = () => {
               No commitments, no hidden fees.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="hero" size="xl" className="group" asChild>
-                <a href="/app">
-                  Launch free audit
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </a>
+              <Button variant="hero" size="xl" className="group" onClick={openModal}>
+                Launch free audit
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
-              <Button variant="heroOutline" size="xl" asChild>
-                <a href="/app">Watch demo</a>
+              <Button variant="heroOutline" size="xl" onClick={openModal}>
+                Watch demo
               </Button>
             </div>
           </div>

@@ -11,26 +11,29 @@ import FAQ from "@/components/FAQ";
 import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
 import StickyCTA from "@/components/StickyCTA";
+import { RequestDemoProvider } from "@/contexts/RequestDemoContext";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background dark">
-      <Header />
-      <main>
-        <Hero />
-        <TrustedBy />
-        <Problem />
-        <Solution />
-        <Features />
-        <Cases />
-        <Comparison />
-        <Pricing />
-        <FAQ />
-        <CTA />
-      </main>
-      <Footer />
-      <StickyCTA />
-    </div>
+    <RequestDemoProvider>
+      <div className="min-h-screen bg-background dark">
+        <Header />
+        <main>
+          <Hero />
+          <TrustedBy />
+          <Problem />
+          <Solution />
+          <Features />
+          <Cases />
+          <Comparison />
+          <Pricing />
+          <FAQ />
+          <CTA />
+        </main>
+        <Footer />
+        <StickyCTA />
+      </div>
+    </RequestDemoProvider>
   );
 };
 

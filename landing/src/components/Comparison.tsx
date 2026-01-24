@@ -1,4 +1,5 @@
 import { Check, X, Minus, Scale } from "lucide-react";
+import { useRequestDemo } from "@/contexts/RequestDemoContext";
 
 const comparisonData = [
   {
@@ -53,6 +54,8 @@ const comparisonData = [
 ];
 
 const Comparison = () => {
+  const { openModal } = useRequestDemo();
+  
   return (
     <section id="comparison" className="py-24 bg-secondary/30 relative overflow-hidden">
       {/* Background decoration */}
@@ -129,9 +132,9 @@ const Comparison = () => {
         <div className="mt-12 text-center">
           <p className="text-muted-foreground">
             Ready to see the difference?{" "}
-            <a href="#" className="text-primary hover:underline font-medium">
+            <button onClick={openModal} className="text-primary hover:underline font-medium">
               Launch free audit →
-            </a>
+            </button>
           </p>
         </div>
       </div>

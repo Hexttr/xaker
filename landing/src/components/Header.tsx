@@ -2,14 +2,14 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import Logo from "./Logo";
-import RequestDemoModal from "./RequestDemoModal";
 import LoginModal from "./LoginModal";
+import { useRequestDemo } from "@/contexts/RequestDemoContext";
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const { openModal: openDemoModal } = useRequestDemo();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -60,7 +60,7 @@ const Header = () => {
             <Button variant="ghost" size="sm" onClick={() => setIsLoginModalOpen(true)}>
               Login
             </Button>
-            <Button variant="hero" size="default" onClick={() => setIsDemoModalOpen(true)}>
+            <Button variant="hero" size="default" onClick={openDemoModal}>
               Request Demo
             </Button>
           </div>
@@ -92,7 +92,7 @@ const Header = () => {
                 <Button variant="ghost" className="justify-start" onClick={() => { setIsLoginModalOpen(true); setIsMobileMenuOpen(false); }}>
                   Login
                 </Button>
-                <Button variant="hero" onClick={() => { setIsDemoModalOpen(true); setIsMobileMenuOpen(false); }}>
+                <Button variant="hero" onClick={() => { openDemoModal(); setIsMobileMenuOpen(false); }}>
                   Request Demo
                 </Button>
               </div>
@@ -100,7 +100,6 @@ const Header = () => {
           </div>
         )}
       </div>
-      <RequestDemoModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </header>
   );

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, Clock, DollarSign, Shield } from "lucide-react";
 import AIVisual from "./AIVisual";
+import { useRequestDemo } from "@/contexts/RequestDemoContext";
 
 const transformation = [
   { before: "2 pentests per year", after: "Continuous protection 24/7" },
@@ -31,6 +32,8 @@ const metrics = [
 ];
 
 const Solution = () => {
+  const { openModal } = useRequestDemo();
+  
   return (
     <section id="solution" className="py-24 bg-background relative overflow-hidden">
       {/* Background glow */}
@@ -75,7 +78,7 @@ const Solution = () => {
                 </div>
               ))}
             </div>
-            <Button variant="hero" size="lg" className="group">
+            <Button variant="hero" size="lg" className="group" onClick={openModal}>
               Start free trial
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>

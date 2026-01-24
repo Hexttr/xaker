@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield, Zap, Clock } from "lucide-react";
 import HeroVisual from "./HeroVisual";
+import { useRequestDemo } from "@/contexts/RequestDemoContext";
 
 const Hero = () => {
+  const { openModal } = useRequestDemo();
+  
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
       {/* Background Grid */}
@@ -36,7 +39,7 @@ const Hero = () => {
 
             {/* CTA */}
             <div className="flex flex-col items-center lg:items-start gap-4 mb-14 animate-fade-up delay-300">
-              <Button variant="hero" size="xl" className="group">
+              <Button variant="hero" size="xl" className="group" onClick={openModal}>
                 Free audit in 15 minutes
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>

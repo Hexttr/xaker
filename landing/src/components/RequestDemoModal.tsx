@@ -48,14 +48,36 @@ const RequestDemoModal = ({ isOpen, onClose }: RequestDemoModalProps) => {
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
+    <div 
+      className='fixed inset-0 z-50 flex items-center justify-center p-4' 
+      style={{ 
+        position: 'fixed', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0,
+        margin: 0,
+        padding: '1rem'
+      }}
+    >
       <div
         className='absolute inset-0 bg-black/60 backdrop-blur-sm'
         onClick={onClose}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
       
-      <div className='relative bg-card border border-border rounded-lg shadow-xl w-full max-w-md animate-fade-in'>
+      <div 
+        className='relative bg-card border border-border rounded-lg shadow-xl w-full max-w-md animate-fade-in'
+        style={{ 
+          position: 'relative',
+          margin: 'auto',
+          maxHeight: '90vh',
+          overflowY: 'auto'
+        }}
+      >
         <button
           onClick={onClose}
           className='absolute top-4 right-4 p-2 rounded-md hover:bg-secondary transition-colors'

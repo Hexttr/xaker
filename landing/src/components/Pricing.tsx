@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Check, Star, ArrowRight } from "lucide-react";
+import { useRequestDemo } from "@/contexts/RequestDemoContext";
 
 const plans = [
   {
     name: "Starter",
-    price: "$200",
+    price: "$499",
     period: "",
     description: "Package of 3 audits: 1 app 3 times or 3 apps once each",
     audience: "Startups, SaaS",
@@ -21,7 +22,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "$499",
+    price: "$2499",
     period: "/mo",
     description: "For growing companies with security teams",
     audience: "Mid-market, SaaS",
@@ -58,6 +59,8 @@ const plans = [
 ];
 
 const Pricing = () => {
+  const { openModal } = useRequestDemo();
+  
   return (
     <section id="pricing" className="py-24 bg-secondary/30 relative overflow-hidden">
       {/* Background decoration */}
@@ -129,6 +132,7 @@ const Pricing = () => {
                 variant={plan.popular ? "hero" : "heroOutline"}
                 size="lg"
                 className="w-full group"
+                onClick={openModal}
               >
                 {plan.cta}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
