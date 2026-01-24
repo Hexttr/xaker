@@ -12,7 +12,8 @@ const queryClient = new QueryClient({
       gcTime: 10 * 60 * 1000, // 10 минут - время хранения в кэше (было cacheTime)
       refetchOnMount: false, // Не делать запрос при монтировании, если данные в кэше
       refetchOnWindowFocus: false, // Не делать запрос при фокусе окна
-      refetchOnReconnect: true, // Делать запрос только при переподключении
+      refetchOnReconnect: false, // Не делать запрос при переподключении (отключаем автоматический refetch)
+      retry: false, // Отключаем повторные попытки при ошибках
     },
   },
 });

@@ -26,8 +26,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Токен истек или невалиден
       localStorage.removeItem('authToken');
-      // Редирект на логин будет обработан ProtectedRoute
-      window.location.reload();
+      // НЕ перезагружаем страницу - ProtectedRoute сам покажет модалку логина
+      // window.location.reload() вызывал бесконечный цикл перезагрузки
     }
     return Promise.reject(error);
   }
