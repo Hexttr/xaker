@@ -46,10 +46,10 @@ import demoRequestsRoutes from './routes/demo-requests.routes';
 app.use('/api/auth', authRoutes);
 app.use('/api/demo-requests', demoRequestsRoutes);
 
-// Защищенные роуты (требуют аутентификации)
-import { authMiddleware } from './middleware/auth.middleware';
-app.use('/api/pentests', authMiddleware, pentestRoutes);
-app.use('/api/services', authMiddleware, serviceRoutes);
+// Временно отключена аутентификация для работы с сервисами и пентестами
+// import { authMiddleware } from './middleware/auth.middleware';
+app.use('/api/pentests', pentestRoutes);
+app.use('/api/services', serviceRoutes);
 
 console.log('✅ Routes загружены успешно');
 
