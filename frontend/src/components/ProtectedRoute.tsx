@@ -15,15 +15,15 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   useEffect(() => {
     // Логирование для отладки
-    console.log('[ProtectedRoute] isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
+    (window as any).__DEBUG__?.log('[ProtectedRoute] isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
     
     // Показываем модалку логина, если не загружается и не авторизован
     if (!isLoading) {
       if (!isAuthenticated) {
-        console.log('[ProtectedRoute] Показываем модалку логина');
+        (window as any).__DEBUG__?.log('[ProtectedRoute] Показываем модалку логина');
         setShowLoginModal(true);
       } else {
-        console.log('[ProtectedRoute] Пользователь авторизован, скрываем модалку');
+        (window as any).__DEBUG__?.log('[ProtectedRoute] Пользователь авторизован, скрываем модалку');
         setShowLoginModal(false);
       }
     }
