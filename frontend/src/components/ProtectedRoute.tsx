@@ -8,7 +8,9 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+  console.log('[ProtectedRoute] Компонент монтируется');
   const { isAuthenticated, isLoading } = useAuth();
+  console.log('[ProtectedRoute] isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
   const [showLoginModal, setShowLoginModal] = useState(true); // Показываем сразу
 
   useEffect(() => {

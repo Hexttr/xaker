@@ -47,6 +47,8 @@ if (!rootElement) {
   throw new Error('Root element not found!');
 }
 
+console.log('[main.tsx] Инициализация приложения...');
+
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
@@ -57,6 +59,8 @@ root.render(
     </QueryClientProvider>
   </React.StrictMode>
 );
+
+console.log('[main.tsx] Приложение инициализировано');
 
 
 

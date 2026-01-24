@@ -10,9 +10,11 @@ import About from './pages/About';
 import './App.css';
 
 function App() {
+  console.log('[App] Компонент App рендерится');
   // Определяем базовый путь: /app в production, / в development
   // Используем window.location для определения окружения
   const basename = window.location.hostname === 'localhost' ? '/' : '/app';
+  console.log('[App] basename:', basename);
   
   return (
     <BrowserRouter basename={basename}>
