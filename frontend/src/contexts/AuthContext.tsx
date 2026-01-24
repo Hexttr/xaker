@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Проверка валидности токена
   const verifyToken = async (tokenToVerify: string) => {
     try {
-      console.log('[AuthContext] Проверка токена...');
+      (window as any).__DEBUG__?.log('[AuthContext] Проверка токена...');
       const response = await fetch('/api/auth/verify', {
         headers: {
           'Authorization': `Bearer ${tokenToVerify}`,
@@ -69,12 +69,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('[AuthContext] Токен валиден, пользователь:', data.user);
+        (window as any).__DEBUG__?.log('[AuthContext] Токен валиден, пользователь:', data.user);
         setUser(data.user);
         setToken(tokenToVerify);
       } else {
         // Токен невалиден, удаляем
-        console.log('[AuthContext] Токен невалиден, удаляем');
+        (window as any).__DEBUG__?.log('[AuthContext] Токен невалиден, удаляем');
         localStorage.removeItem('authToken');
         setToken(null);
         setUser(null);
@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(null);
     } finally {
       setIsLoading(false);
-      console.log('[AuthContext] Проверка завершена, isLoading = false');
+      (window as any).__DEBUG__?.log('[AuthContext] Проверка завершена, isLoading = false');
     }
   };
 
