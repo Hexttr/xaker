@@ -35,12 +35,20 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 console.log('📦 Загрузка routes...');
+import authRoutes from './routes/auth.routes';
 import pentestRoutes from './routes/pentest.routes';
 import serviceRoutes from './routes/service.routes';
 import demoRequestsRoutes from './routes/demo-requests.routes';
-app.use('/api/pentests', pentestRoutes);
-app.use('/api/services', serviceRoutes);
+
+// Публичные роуты (не требуют аутентификации)
+app.use('/api/auth', authRoutes);
 app.use('/api/demo-requests', demoRequestsRoutes);
+
+// Защищенные роуты (требуют аутентификации)
+import { authMiddleware } from './middleware/auth.middleware';
+app.use('/api/pentests', authMiddleware, pentestRoutes);
+app.use('/api/services', authMiddleware, serviceRoutes);
+
 console.log('✅ Routes загружены успешно');
 
 // WebSocket connection
@@ -60,8 +68,10 @@ httpServer.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`🌐 Accessible on: http://localhost:${PORT} and http://127.0.0.1:${PORT}`);
   console.log(`📋 Endpoints:`);
   console.log(`   - GET  /api/health`);
-  console.log(`   - GET  /api/pentests`);
-  console.log(`   - POST /api/pentests`);
+  console.log(`   - POST /api/auth/login`);
+  console.log(`   - GET  /api/auth/verify`);
+  console.log(`   - GET  /api/pentests (protected)`);
+  console.log(`   - POST /api/pentests (protected)`);
   console.log(`   - POST /api/demo-requests`);
 });
 

@@ -117,7 +117,7 @@ router.post('/', async (req: Request, res: Response) => {
     requests.push(newRequest);
 
     // Сохраняем обратно в файл
-    await fs.writeFile(DEMO_REQUESTS_FILE, JSON.stringify(requests, null, 2), 'utf-8'));
+    await fs.writeFile(DEMO_REQUESTS_FILE, JSON.stringify(requests, null, 2), 'utf-8');
 
     console.log(`✅ Новая заявка на демо: ${name} - ${phone}`);
 

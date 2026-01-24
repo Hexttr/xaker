@@ -74,3 +74,6 @@ backend/pentests-data/
 frontend/src/**/*.js
 frontend/src/**/**/*.js
 
+# User authentication data
+backend/users.json
+

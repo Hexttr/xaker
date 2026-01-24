@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import Logo from "./Logo";
 import RequestDemoModal from "./RequestDemoModal";
+import LoginModal from "./LoginModal";
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,8 +57,8 @@ const Header = () => {
 
           {/* CTA Buttons */}
           <div className="hidden lg:flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild>
-              <a href="/app">Login</a>
+            <Button variant="ghost" size="sm" onClick={() => setIsLoginModalOpen(true)}>
+              Login
             </Button>
             <Button variant="hero" size="default" onClick={() => setIsDemoModalOpen(true)}>
               Request Demo
@@ -87,8 +89,8 @@ const Header = () => {
                 </a>
               ))}
               <div className="flex flex-col gap-3 pt-4 border-t border-border/50">
-                <Button variant="ghost" className="justify-start" asChild>
-                  <a href="/app">Login</a>
+                <Button variant="ghost" className="justify-start" onClick={() => { setIsLoginModalOpen(true); setIsMobileMenuOpen(false); }}>
+                  Login
                 </Button>
                 <Button variant="hero" onClick={() => { setIsDemoModalOpen(true); setIsMobileMenuOpen(false); }}>
                   Request Demo
@@ -99,6 +101,7 @@ const Header = () => {
         )}
       </div>
       <RequestDemoModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </header>
   );
 };

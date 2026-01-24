@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Services from './pages/Services';
 import Pentests from './pages/Pentests';
@@ -16,7 +17,14 @@ function App() {
   return (
     <BrowserRouter basename={basename}>
       <Routes>
-        <Route path="/" element={<Layout />}>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Home />} />
           <Route path="services" element={<Services />} />
           <Route path="pentests" element={<Pentests />} />
