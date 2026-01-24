@@ -302,10 +302,8 @@ class ShannonService extends EventEmitter {
       args.push('--config', this.createTempConfig(pentestId, config));
     }
 
-    // Определяем путь к Shannon - используем cli/ui.js напрямую, если shannon.js недоступен
-    const shannonEntryPoint = existsSync(this.SHANNON_DIST_PATH) 
-      ? this.SHANNON_DIST_PATH 
-      : this.SHANNON_CLI_PATH;
+    // Используем cli/ui.js напрямую - это правильная точка входа
+    const shannonEntryPoint = this.SHANNON_CLI_PATH;
     
     pentestService.addLog(pentestId, 'info', `📦 Запускаю Shannon: node ${shannonEntryPoint} ${args.join(' ')}`);
 
