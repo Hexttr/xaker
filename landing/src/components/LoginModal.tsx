@@ -14,8 +14,6 @@ const LoginModal = ({ isOpen, onClose, onSuccess }: LoginModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -57,7 +55,7 @@ const LoginModal = ({ isOpen, onClose, onSuccess }: LoginModalProps) => {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4" 
+      className='fixed inset-0 z-50 flex items-center justify-center p-4' 
       style={{ 
         position: 'fixed', 
         top: 0, 
@@ -68,16 +66,14 @@ const LoginModal = ({ isOpen, onClose, onSuccess }: LoginModalProps) => {
         padding: '1rem'
       }}
     >
-      {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className='absolute inset-0 bg-black/60 backdrop-blur-sm'
         onClick={onClose}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
-
-      {/* Modal */}
+      
       <div 
-        className="relative bg-card border border-border rounded-lg shadow-xl w-full max-w-md animate-fade-in"
+        className='relative bg-card border border-border rounded-lg shadow-xl w-full max-w-md animate-fade-in'
         style={{ 
           position: 'relative',
           margin: 'auto',
@@ -85,79 +81,74 @@ const LoginModal = ({ isOpen, onClose, onSuccess }: LoginModalProps) => {
           overflowY: 'auto'
         }}
       >
-        {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-md hover:bg-secondary transition-colors"
-          aria-label="Close"
+          className='absolute top-4 right-4 p-2 rounded-md hover:bg-secondary transition-colors'
+          aria-label='Close'
         >
-          <X className="h-5 w-5 text-muted-foreground" />
+          <X className='h-5 w-5 text-muted-foreground' />
         </button>
 
-        {/* Content */}
-        <div className="p-6">
-          <h2 className="text-2xl font-bold text-foreground mb-2">Login</h2>
-          <p className="text-muted-foreground mb-6">
+        <div className='p-6'>
+          <h2 className='text-2xl font-bold text-foreground mb-2'>Login</h2>
+          <p className='text-muted-foreground mb-6'>
             Enter your credentials to access the platform
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Username Field */}
+          <form onSubmit={handleSubmit} className='space-y-4'>
             <div>
               <label
-                htmlFor="username"
-                className="block text-sm font-medium text-foreground mb-2"
+                htmlFor='username'
+                className='block text-sm font-medium text-foreground mb-2'
               >
                 Username *
               </label>
               <input
-                id="username"
-                name="username"
-                type="text"
+                id='username'
+                name='username'
+                type='text'
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                className="w-full px-4 py-2.5 rounded-md bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                placeholder="Enter your username"
+                className='w-full px-4 py-2.5 rounded-md bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all'
+                placeholder='Enter your username'
                 disabled={isLoading}
-                autoComplete="username"
+                autoComplete='username'
               />
             </div>
 
-            {/* Password Field */}
             <div>
               <label
-                htmlFor="password"
-                className="block text-sm font-medium text-foreground mb-2"
+                htmlFor='password'
+                className='block text-sm font-medium text-foreground mb-2'
               >
                 Password *
               </label>
               <input
-                id="password"
-                name="password"
-                type="password"
+                id='password'
+                name='password'
+                type='password'
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-2.5 rounded-md bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                placeholder="Enter your password"
+                className='w-full px-4 py-2.5 rounded-md bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all'
+                placeholder='Enter your password'
                 disabled={isLoading}
-                autoComplete="current-password"
+                autoComplete='current-password'
               />
             </div>
 
             {error && (
-              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md border border-destructive/20">
+              <div className='text-sm text-destructive bg-destructive/10 p-3 rounded-md border border-destructive/20'>
                 {error}
               </div>
             )}
 
-            {/* Submit Button */}
             <Button
-              type="submit"
-              variant="hero"
-              size="lg"
-              className="w-full"
+              type='submit'
+              variant='hero'
+              size='lg'
+              className='w-full'
               disabled={isLoading}
             >
               {isLoading ? 'Logging in...' : 'Login'}
