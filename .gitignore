@@ -77,3 +77,25 @@ frontend/src/**/**/*.js
 # User authentication data
 backend/users.json
 
+# Sensitive data - SSH credentials, API keys
+# PowerShell scripts with SSH passwords and API keys
+*.ps1
+!deploy-*.ps1.example
+!*.ps1.example
+
+# Server credentials (if any config files contain them)
+*credentials*
+*secrets*
+*passwords*
+
+# API keys in any format
+*api-key*
+*api_key*
+*apikey*
+
+# SSH keys and host keys
+*hostkey*
+*ssh-key*
+*id_rsa*
+*id_ed25519*
+

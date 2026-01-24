@@ -85,12 +85,65 @@ class ShannonService extends EventEmitter {
    * Остановить пентест
    */
   async stopPentest(pentestId: string): Promise<void> {
+    // Пытаемся остановить процесс из Map
     const process = this.runningPentests.get(pentestId);
     if (process) {
-      process.kill('SIGTERM');
-      this.runningPentests.delete(pentestId);
+      try {
+        process.kill('SIGTERM');
+        this.runningPentests.delete(pentestId);
+        pentestService.updatePentestStatus(pentestId, 'stopped');
+        pentestService.addLog(pentestId, 'info', 'Пентест остановлен пользователем');
+        return;
+      } catch (error: any) {
+        pentestService.addLog(pentestId, 'warn', `Ошибка при остановке процесса: ${error.message}`);
+      }
+    }
+    
+    // Если процесс не найден в Map, ищем его по PID через систему
+    // Ищем процессы temporal/client.js, которые могут быть связаны с этим пентестом
+    try {
+      const { execSync } = require('child_process');
+      const pentestDir = join(process.cwd(), 'pentests', pentestId);
+      
+      // Ищем процессы, которые работают с этой директорией
+      const processes = execSync(`ps aux | grep 'temporal/client' | grep '${pentestId}' | grep -v grep || true`, { encoding: 'utf-8' });
+      if (processes.trim()) {
+        const pids = processes.trim().split('\n').map((line: string) => line.split(/\s+/)[1]).filter(Boolean);
+        for (const pid of pids) {
+          try {
+            execSync(`kill -TERM ${pid}`, { timeout: 2000 });
+            pentestService.addLog(pentestId, 'info', `Остановлен процесс temporal/client (PID: ${pid})`);
+          } catch (e) {
+            // Игнорируем ошибки
+          }
+        }
+      }
+      
+      // Также останавливаем все процессы temporal/client для этого пентеста
+      const allClientProcesses = execSync(`ps aux | grep 'temporal/client' | grep -v grep | awk '{print $2}' || true`, { encoding: 'utf-8' });
+      if (allClientProcesses.trim()) {
+        const allPids = allClientProcesses.trim().split('\n').filter(Boolean);
+        for (const pid of allPids) {
+          try {
+            // Проверяем, связан ли процесс с нашим пентестом
+            const cmdline = execSync(`ps -p ${pid} -o cmd= 2>/dev/null || true`, { encoding: 'utf-8' });
+            if (cmdline.includes(pentestId) || cmdline.includes(pentestDir)) {
+              execSync(`kill -TERM ${pid}`, { timeout: 2000 });
+              pentestService.addLog(pentestId, 'info', `Остановлен связанный процесс (PID: ${pid})`);
+            }
+          } catch (e) {
+            // Игнорируем ошибки
+          }
+        }
+      }
+      
       pentestService.updatePentestStatus(pentestId, 'stopped');
       pentestService.addLog(pentestId, 'info', 'Пентест остановлен пользователем');
+    } catch (error: any) {
+      pentestService.addLog(pentestId, 'error', `Ошибка при поиске и остановке процессов: ${error.message}`);
+      // Все равно обновляем статус
+      pentestService.updatePentestStatus(pentestId, 'stopped');
+      pentestService.addLog(pentestId, 'info', 'Статус пентеста обновлен на "stopped"');
     }
   }
 
@@ -316,6 +369,8 @@ class ShannonService extends EventEmitter {
       ...process.env,
       ANTHROPIC_API_KEY: apiKey,
       CLAUDE_CODE_MAX_OUTPUT_TOKENS: '64000',
+      DEBUG: process.env.DEBUG || '1', // Включаем DEBUG для логирования stderr от claude-code
+      DEBUG_SDK: process.env.DEBUG_SDK || '1', // Включаем DEBUG_SDK для детального логирования SDK
     };
     
     // ВАЖНО: Shannon всегда использует Claude API, а не MiroMind/Ollama
@@ -356,6 +411,10 @@ class ShannonService extends EventEmitter {
     pentestService.addLog(pentestId, 'info', `   CLAUDE_MODEL: ${process.env.CLAUDE_MODEL || 'claude-3-haiku-20240307'}`);
     pentestService.addLog(pentestId, 'info', `   HTTP_PROXY: ${env.HTTP_PROXY || 'не установлен'}`);
     pentestService.addLog(pentestId, 'info', `   HTTPS_PROXY: ${env.HTTPS_PROXY || 'не установлен'}`);
+    pentestService.addLog(pentestId, 'info', `   TEMPORAL_ADDRESS: ${env.TEMPORAL_ADDRESS || 'не установлен'}`);
+    pentestService.addLog(pentestId, 'info', `   Всего переменных в env: ${Object.keys(env).length}`);
+    // Логируем наличие ANTHROPIC_API_KEY в process.env (для отладки)
+    pentestService.addLog(pentestId, 'info', `   process.env.ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? '✅ УСТАНОВЛЕН' : '❌ НЕ УСТАНОВЛЕН'}`);
     
     pentestService.addLog(pentestId, 'info', `🚀 Запускаю процесс: node ${shannonEntryPoint} ${args.join(' ')}`);
     pentestService.addLog(pentestId, 'info', `📂 Рабочая директория: ${this.SHANNON_PATH}`);
