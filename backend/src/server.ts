@@ -3,8 +3,10 @@ import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
+import { join } from 'path';
 
-dotenv.config();
+// Загружаем .env из корня backend директории
+dotenv.config({ path: join(__dirname, '..', '.env') });
 
 const app = express();
 const httpServer = createServer(app);
