@@ -93,6 +93,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Логин
   const login = async (username: string, password: string) => {
     try {
+      (window as any).__DEBUG__?.log('[AuthContext] Попытка входа:', username);
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -101,7 +102,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         body: JSON.stringify({ username, password }),
       });
 
+      (window as any).__DEBUG__?.log('[AuthContext] Ответ сервера:', response.status, response.statusText);
+      
+      // Проверяем Content-Type перед парсингом JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        (window as any).__DEBUG__?.log('[AuthContext] Ошибка: получен не JSON, а:', text.substring(0, 200));
+        throw new Error(`Server returned ${response.status}: ${text.substring(0, 100)}`);
+      }
+
       const data = await response.json();
+      (window as any).__DEBUG__?.log('[AuthContext] Данные ответа:', data);
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Ошибка при входе');
@@ -111,7 +123,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       localStorage.setItem('authToken', data.token);
       setToken(data.token);
       setUser(data.user);
+      (window as any).__DEBUG__?.log('[AuthContext] Вход успешен, токен сохранен');
     } catch (error: any) {
+      (window as any).__DEBUG__?.log('[AuthContext] Ошибка при входе:', error);
       console.error('Ошибка при входе:', error);
       throw error;
     }
