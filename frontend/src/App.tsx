@@ -10,11 +10,24 @@ import About from './pages/About';
 import './App.css';
 
 function App() {
-  (window as any).__DEBUG__?.log('[App] Компонент App рендерится');
+  // Логируем ДО любых операций
+  try {
+    (window as any).__DEBUG__?.log('[App] Компонент App рендерится - НАЧАЛО');
+    console.log('[App] Компонент App рендерится - НАЧАЛО (console.log)');
+  } catch (e) {
+    console.error('[App] Ошибка при логировании:', e);
+  }
+  
   // Определяем базовый путь: /app в production, / в development
   // Используем window.location для определения окружения
   const basename = window.location.hostname === 'localhost' ? '/' : '/app';
-  (window as any).__DEBUG__?.log('[App] basename:', basename);
+  
+  try {
+    (window as any).__DEBUG__?.log('[App] basename:', basename);
+    console.log('[App] basename:', basename);
+  } catch (e) {
+    console.error('[App] Ошибка при логировании basename:', e);
+  }
   
   return (
     <BrowserRouter basename={basename}>
