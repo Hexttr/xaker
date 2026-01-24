@@ -1,0 +1,58 @@
+interface LogoProps {
+  size?: "sm" | "md" | "lg";
+  showText?: boolean;
+  className?: string;
+}
+
+const Logo = ({ size = "md", showText = true, className = "" }: LogoProps) => {
+  const sizes = {
+    sm: { icon: "h-6 w-6", text: "text-lg" },
+    md: { icon: "h-8 w-8", text: "text-xl" },
+    lg: { icon: "h-10 w-10", text: "text-2xl" },
+  };
+
+  return (
+    <div className={`flex items-center gap-3 ${className}`}>
+      {/* Strict Shield with AI */}
+      <div className="relative">
+        <svg
+          viewBox="0 0 32 32"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className={`${sizes[size].icon} text-primary`}
+        >
+          {/* Sharp Shield Shape */}
+          <path
+            d="M16 2L4 7V15C4 22.5 9.5 29 16 30C22.5 29 28 22.5 28 15V7L16 2Z"
+            fill="currentColor"
+            fillOpacity="0.15"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="miter"
+          />
+          {/* AI Text */}
+          <text
+            x="16"
+            y="19"
+            textAnchor="middle"
+            fill="currentColor"
+            fontSize="10"
+            fontWeight="700"
+            fontFamily="system-ui, sans-serif"
+            letterSpacing="-0.5"
+          >
+            AI
+          </text>
+        </svg>
+      </div>
+      
+      {showText && (
+        <span className={`${sizes[size].text} font-bold text-foreground`}>
+          Pentest<span className="text-primary">.red</span>
+        </span>
+      )}
+    </div>
+  );
+};
+
+export default Logo;
