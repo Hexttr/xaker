@@ -8,9 +8,9 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  console.log('[ProtectedRoute] Компонент монтируется');
+  (window as any).__DEBUG__?.log('[ProtectedRoute] Компонент монтируется');
   const { isAuthenticated, isLoading } = useAuth();
-  console.log('[ProtectedRoute] isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
+  (window as any).__DEBUG__?.log('[ProtectedRoute] isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
   const [showLoginModal, setShowLoginModal] = useState(true); // Показываем сразу
 
   useEffect(() => {
@@ -31,7 +31,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // Показываем загрузку во время проверки токена
   if (isLoading) {
-    console.log('[ProtectedRoute] Показываем загрузку');
+    (window as any).__DEBUG__?.log('[ProtectedRoute] Показываем загрузку');
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-white">Loading...</div>
@@ -41,17 +41,17 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // Блокируем доступ, если не авторизован
   if (!isAuthenticated) {
-    console.log('[ProtectedRoute] Блокируем доступ - пользователь не авторизован');
+    (window as any).__DEBUG__?.log('[ProtectedRoute] Блокируем доступ - пользователь не авторизован');
     return (
       <>
         <LoginModal
           isOpen={showLoginModal}
           onClose={() => {
             // Не позволяем закрыть модалку без логина
-            console.log('[ProtectedRoute] Попытка закрыть модалку - игнорируем');
+            (window as any).__DEBUG__?.log('[ProtectedRoute] Попытка закрыть модалку - игнорируем');
           }}
           onSuccess={() => {
-            console.log('[ProtectedRoute] Успешный вход, скрываем модалку');
+            (window as any).__DEBUG__?.log('[ProtectedRoute] Успешный вход, скрываем модалку');
             setShowLoginModal(false);
             // После успешного входа компонент перерендерится и покажет children
           }}
@@ -68,7 +68,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   // Показываем контент только если авторизован
-  console.log('[ProtectedRoute] Пользователь авторизован, показываем контент');
+  (window as any).__DEBUG__?.log('[ProtectedRoute] Пользователь авторизован, показываем контент');
   return <>{children}</>;
 };
 

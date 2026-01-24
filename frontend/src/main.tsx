@@ -47,7 +47,13 @@ if (!rootElement) {
   throw new Error('Root element not found!');
 }
 
-console.log('[main.tsx] Инициализация приложения...');
+// Логи, которые не удаляются при минификации
+window.__DEBUG__ = window.__DEBUG__ || {};
+window.__DEBUG__.log = function(...args) {
+  console.log('[DEBUG]', ...args);
+};
+
+window.__DEBUG__.log('[main.tsx] Инициализация приложения...');
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
@@ -60,7 +66,7 @@ root.render(
   </React.StrictMode>
 );
 
-console.log('[main.tsx] Приложение инициализировано');
+window.__DEBUG__.log('[main.tsx] Приложение инициализировано');
 
 
 

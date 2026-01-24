@@ -29,7 +29,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  console.log('[AuthContext] AuthProvider монтируется');
+  (window as any).__DEBUG__?.log('[AuthContext] AuthProvider монтируется');
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,9 +37,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Загружаем токен из localStorage при монтировании
   useEffect(() => {
     const checkAuth = async () => {
-      console.log('[AuthContext] Проверка аутентификации...');
+      (window as any).__DEBUG__?.log('[AuthContext] Проверка аутентификации...');
       const storedToken = localStorage.getItem('authToken');
-      console.log('[AuthContext] Токен в localStorage:', storedToken ? 'найден' : 'не найден');
+      (window as any).__DEBUG__?.log('[AuthContext] Токен в localStorage:', storedToken ? 'найден' : 'не найден');
       
       if (storedToken) {
         setToken(storedToken);
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         await verifyToken(storedToken);
       } else {
         // Нет токена - точно не авторизован
-        console.log('[AuthContext] Токен не найден, пользователь не авторизован');
+        (window as any).__DEBUG__?.log('[AuthContext] Токен не найден, пользователь не авторизован');
         setToken(null);
         setUser(null);
         setIsLoading(false);
