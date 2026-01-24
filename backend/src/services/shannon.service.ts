@@ -296,6 +296,7 @@ class ShannonService extends EventEmitter {
     const args = [
       config.targetUrl,
       repoPath,
+      '--wait', // Ждем завершения workflow
     ];
 
     // Опциональный конфиг
