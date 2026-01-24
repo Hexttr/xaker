@@ -13,6 +13,8 @@ class ShannonService extends EventEmitter {
   private runningPentests: Map<string, ChildProcess> = new Map();
   private readonly SHANNON_PATH = resolve(process.cwd(), '../shannon');
   private readonly SHANNON_DIST_PATH = join(this.SHANNON_PATH, 'dist', 'shannon.js');
+  // Альтернативный путь напрямую к cli/ui.js
+  private readonly SHANNON_CLI_PATH = join(this.SHANNON_PATH, 'dist', 'cli', 'ui.js');
   private readonly USE_SIMULATION = process.env.USE_SIMULATION === 'true';
 
   /**
