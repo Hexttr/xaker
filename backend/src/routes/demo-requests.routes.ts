@@ -18,44 +18,72 @@ async function ensureFileExists() {
   }
 }
 
-// Отправить уведомление в Telegram
+// Отправить уведомление в Telegram (поддержка нескольких чатов)
 async function sendTelegramNotification(name: string, phone: string) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
+  const chatIds = process.env.TELEGRAM_CHAT_IDS; // Для нескольких чатов через запятую
 
-  if (!botToken || !chatId) {
-    console.log('⚠️ Telegram не настроен: TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID не установлены');
+  if (!botToken) {
+    console.log('⚠️ Telegram не настроен: TELEGRAM_BOT_TOKEN не установлен');
     return;
   }
 
-  try {
-    const message = `🆕 *New Demo Request*\n\n` +
-      `👤 *Name:* ${name}\n` +
-      `📞 *Phone:* ${phone}\n` +
-      `🕐 *Time:* ${new Date().toLocaleString('en-US', { timeZone: 'UTC' })} UTC`;
-
-    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: message,
-        parse_mode: 'Markdown',
-      }),
-    });
-
-    if (response.ok) {
-      console.log('✅ Уведомление отправлено в Telegram');
-    } else {
-      const error = await response.text();
-      console.error('❌ Ошибка отправки в Telegram:', error);
-    }
-  } catch (error: any) {
-    console.error('❌ Ошибка при отправке в Telegram:', error?.message || error);
+  // Собираем список chat_id (поддержка старого формата и нового)
+  const chatIdList: string[] = [];
+  if (chatIds) {
+    // Новый формат: несколько chat_id через запятую
+    chatIdList.push(...chatIds.split(',').map(id => id.trim()).filter(id => id));
+  } else if (chatId) {
+    // Старый формат: один chat_id
+    chatIdList.push(chatId);
   }
+
+  if (chatIdList.length === 0) {
+    console.log('⚠️ Telegram не настроен: TELEGRAM_CHAT_ID или TELEGRAM_CHAT_IDS не установлены');
+    return;
+  }
+
+  const message = `🆕 *New Demo Request*\n\n` +
+    `👤 *Name:* ${name}\n` +
+    `📞 *Phone:* ${phone}\n` +
+    `🕐 *Time:* ${new Date().toLocaleString('en-US', { timeZone: 'UTC' })} UTC`;
+
+  // Отправляем в каждый чат
+  const sendPromises = chatIdList.map(async (chatId) => {
+    try {
+      const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'Markdown',
+        }),
+      });
+
+      if (response.ok) {
+        console.log(`✅ Уведомление отправлено в Telegram (chat_id: ${chatId})`);
+        return { success: true, chatId };
+      } else {
+        const error = await response.text();
+        console.error(`❌ Ошибка отправки в Telegram (chat_id: ${chatId}):`, error);
+        return { success: false, chatId, error };
+      }
+    } catch (error: any) {
+      console.error(`❌ Ошибка при отправке в Telegram (chat_id: ${chatId}):`, error?.message || error);
+      return { success: false, chatId, error: error?.message || error };
+    }
+  });
+
+  // Ждем завершения всех отправок (не блокируем основной ответ)
+  Promise.all(sendPromises).then(results => {
+    const successCount = results.filter(r => r.success).length;
+    console.log(`📊 Telegram: отправлено в ${successCount}/${chatIdList.length} чатов`);
+  });
 }
 
 // Сохранить заявку на демо
