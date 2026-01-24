@@ -71,7 +71,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (response.ok) {
         const data = await response.json();
         (window as any).__DEBUG__?.log('[AuthContext] Токен валиден, пользователь:', data.user);
-        setUser(data.user);
+        // Устанавливаем user из ответа или создаем из токена
+        if (data.user) {
+          setUser(data.user);
+        } else {
+          // Если user не пришел, создаем из decoded токена (fallback)
+          const decoded = JSON.parse(atob(tokenToVerify.split('.')[1]));
+          setUser({ id: decoded.userId || decoded.sub || 'unknown', username: decoded.username || 'unknown' });
+        }
         setToken(tokenToVerify);
       } else {
         // Токен невалиден, удаляем
@@ -139,7 +146,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUser(null);
   };
 
-  (window as any).__DEBUG__?.log('[AuthContext] Рендеринг AuthProvider, isLoading:', isLoading, 'token:', token ? 'есть' : 'нет', 'user:', user ? 'есть' : 'нет', 'isAuthenticated:', !!token && !!user);
+  // Для isAuthenticated достаточно токена - user может быть установлен позже
+  const isAuthenticated = !!token;
+  
+  (window as any).__DEBUG__?.log('[AuthContext] Рендеринг AuthProvider, isLoading:', isLoading, 'token:', token ? 'есть' : 'нет', 'user:', user ? 'есть' : 'нет', 'isAuthenticated:', isAuthenticated);
   
   // Логируем перед рендерингом children
   (window as any).__DEBUG__?.log('[AuthContext] Рендерим children (App)');
@@ -149,7 +159,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       value={{
         user,
         token,
-        isAuthenticated: !!token && !!user,
+        isAuthenticated: isAuthenticated, // Достаточно токена для авторизации
         login,
         logout,
         isLoading,
