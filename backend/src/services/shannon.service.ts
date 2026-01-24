@@ -302,7 +302,12 @@ class ShannonService extends EventEmitter {
       args.push('--config', this.createTempConfig(pentestId, config));
     }
 
-    pentestService.addLog(pentestId, 'info', `📦 Запускаю Shannon: node ${this.SHANNON_DIST_PATH} ${args.join(' ')}`);
+    // Определяем путь к Shannon - используем cli/ui.js напрямую, если shannon.js недоступен
+    const shannonEntryPoint = existsSync(this.SHANNON_DIST_PATH) 
+      ? this.SHANNON_DIST_PATH 
+      : this.SHANNON_CLI_PATH;
+    
+    pentestService.addLog(pentestId, 'info', `📦 Запускаю Shannon: node ${shannonEntryPoint} ${args.join(' ')}`);
 
     // Запускаем Shannon как дочерний процесс
     // Настраиваем переменные окружения для прокси (если VPN используется)
@@ -351,7 +356,7 @@ class ShannonService extends EventEmitter {
     pentestService.addLog(pentestId, 'info', `   HTTP_PROXY: ${env.HTTP_PROXY || 'не установлен'}`);
     pentestService.addLog(pentestId, 'info', `   HTTPS_PROXY: ${env.HTTPS_PROXY || 'не установлен'}`);
     
-    const shannonProcess = spawn('node', [this.SHANNON_DIST_PATH, ...args], {
+    const shannonProcess = spawn('node', [shannonEntryPoint, ...args], {
       cwd: this.SHANNON_PATH,
       env: env,
       stdio: ['ignore', 'pipe', 'pipe'],
