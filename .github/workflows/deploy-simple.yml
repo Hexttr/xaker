@@ -26,18 +26,51 @@ jobs:
           echo "PWD: $(pwd)"
           echo ""
           echo "=== Finding project ==="
-          if [ -d "/root/xaker" ]; then
-            echo "Found: /root/xaker"
-            cd /root/xaker
-          elif [ -d "$HOME/xaker" ]; then
-            echo "Found: $HOME/xaker"
-            cd $HOME/xaker
-          else
-            echo "ERROR: Project not found"
-            echo "Checking /root:"
-            ls -la /root/
+          PROJECT_DIR=""
+          
+          # Try common locations
+          for path in "/root/xaker" "$HOME/xaker" "/opt/xaker" "/var/www/xaker" "/home/xaker/xaker"; do
+            if [ -d "$path" ]; then
+              echo "Found: $path"
+              PROJECT_DIR="$path"
+              break
+            fi
+          done
+          
+          # If not found, search for xaker directory
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "Searching for xaker directory..."
+            FOUND=$(find /root /opt /var/www /home -type d -name "xaker" 2>/dev/null | head -1)
+            if [ -n "$FOUND" ]; then
+              echo "Found: $FOUND"
+              PROJECT_DIR="$FOUND"
+            fi
+          fi
+          
+          # If still not found, check if git repo exists
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "Searching for git repository..."
+            FOUND=$(find /root /opt /var/www /home -type d -name ".git" -path "*/xaker/.git" 2>/dev/null | head -1 | sed 's/\/\.git$//')
+            if [ -n "$FOUND" ]; then
+              echo "Found git repo: $FOUND"
+              PROJECT_DIR="$FOUND"
+            fi
+          fi
+          
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "ERROR: Project not found in common locations"
+            echo "Checking /root contents:"
+            ls -la /root/ | head -20
+            echo ""
+            echo "Checking /opt:"
+            ls -la /opt/ 2>/dev/null | head -10
+            echo ""
+            echo "Checking /var/www:"
+            ls -la /var/www/ 2>/dev/null | head -10
             exit 1
           fi
+          
+          cd "$PROJECT_DIR"
           echo "Current dir: $(pwd)"
           echo ""
           echo "=== Git pull ==="

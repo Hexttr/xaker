@@ -23,13 +23,29 @@ jobs:
           set -e
           echo "=== Starting deployment ==="
           
-          # Find project directory
-          if [ -d "/root/xaker" ]; then
-            PROJECT_DIR="/root/xaker"
-          elif [ -d "$HOME/xaker" ]; then
-            PROJECT_DIR="$HOME/xaker"
-          else
-            echo "ERROR: Project directory not found. Checking /root:"
+          # Find project directory - search in multiple locations
+          PROJECT_DIR=""
+          
+          # Try common locations
+          for path in "/root/xaker" "$HOME/xaker" "/opt/xaker" "/var/www/xaker"; do
+            if [ -d "$path" ]; then
+              PROJECT_DIR="$path"
+              break
+            fi
+          done
+          
+          # If not found, search for xaker directory
+          if [ -z "$PROJECT_DIR" ]; then
+            FOUND=$(find /root /opt /var/www /home -maxdepth 3 -type d -name "xaker" 2>/dev/null | head -1)
+            if [ -n "$FOUND" ]; then
+              PROJECT_DIR="$FOUND"
+            fi
+          fi
+          
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "ERROR: Project directory not found"
+            echo "Searched in: /root, $HOME, /opt, /var/www"
+            echo "Checking /root:"
             ls -la /root/ | head -10
             exit 1
           fi
