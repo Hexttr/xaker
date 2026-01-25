@@ -24,12 +24,7 @@ print("REBUILD DOCKER IMAGE WITH NODE WRAPPERS")
 print("=" * 80)
 print("\n⚠️  This will rebuild the Docker image")
 print("This may take several minutes")
-
-response = input("\nProceed with rebuild? (y/n): ")
-if response.lower() != 'y':
-    print("Cancelled")
-    ssh.close()
-    sys.exit(0)
+print("Proceeding with rebuild...")
 
 print("\n1. Stopping worker...")
 stdin, stdout, stderr = ssh.exec_command('cd /opt/xaker/shannon && docker-compose stop worker && docker-compose rm -f worker')
