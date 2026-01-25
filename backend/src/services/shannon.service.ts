@@ -2,21 +2,35 @@ import { Pentest } from '../types/pentest';
 import { pentestService } from './pentest.service';
 import { EventEmitter } from 'events';
 import { spawn, ChildProcess } from 'child_process';
-import { join, resolve, normalize } from 'path';
+import { join, resolve, normalize, dirname } from 'path';
 import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'fs';
 import fetch from 'node-fetch';
-import * as process from 'process';
+import { fileURLToPath } from 'url';
 
 /**
  * Сервис для интеграции с Shannon
  */
 class ShannonService extends EventEmitter {
   private runningPentests: Map<string, ChildProcess> = new Map();
+  
+  // Получаем текущую рабочую директорию безопасно
+  private getCurrentWorkingDir(): string {
+    if (typeof process !== 'undefined' && process.cwd) {
+      return process.cwd();
+    }
+    // Fallback: используем __dirname если доступен
+    if (typeof __dirname !== 'undefined') {
+      return resolve(dirname(__dirname), '..');
+    }
+    // Последний fallback
+    return '/opt/xaker/backend';
+  }
+  
   // Путь к Shannon можно настроить через переменную окружения SHANNON_PATH
   // По умолчанию ищем в ../shannon относительно текущей директории
   private readonly SHANNON_PATH = process.env.SHANNON_PATH 
     ? resolve(process.env.SHANNON_PATH)
-    : resolve(process.cwd ? process.cwd() : __dirname + '/../../..', '../shannon');
+    : resolve(this.getCurrentWorkingDir(), '../shannon');
   private readonly SHANNON_DIST_PATH = join(this.SHANNON_PATH, 'dist', 'shannon.js');
   // Альтернативный путь напрямую к cli/ui.js
   private readonly SHANNON_CLI_PATH = join(this.SHANNON_PATH, 'dist', 'cli', 'ui.js');
@@ -44,7 +58,7 @@ class ShannonService extends EventEmitter {
       console.log(`[Shannon] SHANNON_PATH exists: ${shannonDirExists} (${this.SHANNON_PATH})`);
       console.log(`[Shannon] SHANNON_DIST_PATH exists: ${distPathExists}`);
       console.log(`[Shannon] SHANNON_CLI_PATH exists: ${cliPathExists}`);
-        const cwd = process.cwd ? process.cwd() : (__dirname + '/../../..');
+        const cwd = this.getCurrentWorkingDir();
         console.log(`[Shannon] process.cwd(): ${cwd}`);
     }
     
@@ -129,7 +143,7 @@ class ShannonService extends EventEmitter {
     // Ищем процессы temporal/client.js, которые могут быть связаны с этим пентестом
     try {
       const { execSync } = require('child_process');
-      const cwd = process.cwd ? process.cwd() : (__dirname + '/../../..');
+      const cwd = this.getCurrentWorkingDir();
       const pentestDir = join(cwd, 'pentests', pentestId);
       
       // Ищем процессы, которые работают с этой директорией
@@ -202,7 +216,7 @@ class ShannonService extends EventEmitter {
    */
   private isSelfScanPath(path: string): boolean {
     const normalizedPath = normalize(path).toLowerCase();
-    const cwd = process.cwd ? process.cwd() : (__dirname + '/../../..');
+    const cwd = this.getCurrentWorkingDir();
     const projectRoot = normalize(cwd).toLowerCase();
     
     // Проверяем, не указывает ли путь на сам проект Xaker
@@ -301,7 +315,7 @@ class ShannonService extends EventEmitter {
     // Для работы Shannon нужен путь к репозиторию
     // ВАЖНО: Если не указан явный путь к исходному коду, используем изолированную папку
     // чтобы Shannon не анализировал код платформы Xaker
-    const cwd = process.cwd ? process.cwd() : (__dirname + '/../../..');
+    const cwd = this.getCurrentWorkingDir();
     const pentestsDir = join(cwd, 'pentests');
     const pentestDir = join(pentestsDir, pentestId);
     let repoPath = pentestDir; // По умолчанию используем изолированную папку (только black-box)
@@ -396,7 +410,7 @@ class ShannonService extends EventEmitter {
     } else if (existsSync(this.SHANNON_DIST_PATH)) {
       shannonEntryPoint = this.SHANNON_DIST_PATH;
     } else {
-      const cwd = process.cwd ? process.cwd() : (__dirname + '/../../..');
+      const cwd = this.getCurrentWorkingDir();
       throw new Error(`Shannon entry point not found. Checked paths:
         - ${this.SHANNON_MAIN_PATH}
         - ${this.SHANNON_CLI_PATH}
@@ -465,7 +479,7 @@ class ShannonService extends EventEmitter {
     
     // Проверяем что рабочая директория существует
     if (!existsSync(this.SHANNON_PATH)) {
-        const cwd = process.cwd ? process.cwd() : (__dirname + '/../../..');
+        const cwd = this.getCurrentWorkingDir();
         throw new Error(`Shannon directory not found: ${this.SHANNON_PATH}. Current working directory: ${cwd}`);
     }
     
@@ -586,7 +600,7 @@ class ShannonService extends EventEmitter {
    * Сгенерировать отчет о недоступности цели
    */
   private async generateUnreachableReport(pentestId: string, config: Pentest['config']): Promise<void> {
-    const cwd = process.cwd ? process.cwd() : (__dirname + '/../../..');
+    const cwd = this.getCurrentWorkingDir();
     const pentestDir = join(cwd, 'pentests', pentestId);
     const deliverablesDir = join(pentestDir, 'deliverables');
     
