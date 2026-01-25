@@ -47,14 +47,31 @@ jobs:
             fi
           fi
           
-          # If still not found, check if git repo exists
+          # If still not found, check PM2 process working directory
           if [ -z "$PROJECT_DIR" ]; then
-            echo "Searching for git repository..."
-            FOUND=$(find /root /opt /var/www /home -type d -name ".git" -path "*/xaker/.git" 2>/dev/null | head -1 | sed 's/\/\.git$//')
-            if [ -n "$FOUND" ]; then
-              echo "Found git repo: $FOUND"
-              PROJECT_DIR="$FOUND"
+            echo "Checking PM2 process working directory..."
+            PM2_CWD=$(pm2 jlist 2>/dev/null | grep -o '"cwd":"[^"]*' | grep -o '/[^"]*' | head -1)
+            if [ -n "$PM2_CWD" ] && [ -d "$PM2_CWD" ]; then
+              # Go up to project root if we're in backend
+              if [ "$(basename $PM2_CWD)" = "backend" ]; then
+                PROJECT_DIR=$(dirname "$PM2_CWD")
+              else
+                PROJECT_DIR="$PM2_CWD"
+              fi
+              echo "Found via PM2: $PROJECT_DIR"
             fi
+          fi
+          
+          # If still not found, search for git repo with remote origin
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "Searching for git repository with origin..."
+            for gitdir in $(find /root /opt /var/www /home -type d -name ".git" 2>/dev/null); do
+              if [ -f "$gitdir/config" ] && grep -q "Hexttr/xaker" "$gitdir/config" 2>/dev/null; then
+                PROJECT_DIR=$(dirname "$gitdir")
+                echo "Found git repo via origin: $PROJECT_DIR"
+                break
+              fi
+            done
           fi
           
           if [ -z "$PROJECT_DIR" ]; then
