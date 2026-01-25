@@ -20,19 +20,19 @@ jobs:
         password: ${{ secrets.SERVER_PASSWORD }}
         port: ${{ secrets.SERVER_PORT }}
         script: |
-          set -e  # Остановка при ошибке
+          set -e
           echo "🚀 Starting deployment..."
           
           echo "📥 [1/4] Pulling latest changes..."
-          cd /root/xaker
+          cd /root/xaker || { echo "ERROR: /root/xaker not found"; exit 1; }
           git pull origin prod
           
           echo "🔨 [2/4] Building backend..."
-          cd backend
+          cd backend || { echo "ERROR: backend directory not found"; exit 1; }
           npm run build
           
           echo "🔄 [3/4] Restarting backend..."
-          pm2 restart xaker-backend || (pm2 start npm --name xaker-backend -- run start)
+          pm2 restart xaker-backend || (cd /root/xaker/backend && pm2 start npm --name xaker-backend -- run start)
           
           echo "✅ [4/4] Checking status..."
           pm2 status xaker-backend

@@ -20,6 +20,6 @@ jobs:
         password: ${{ secrets.SERVER_PASSWORD }}
         port: ${{ secrets.SERVER_PORT }}
         script: |
-          cd /root/xaker && git pull origin prod && cd backend && npm run build && pm2 restart xaker-backend && pm2 status xaker-backend
+          cd /root/xaker && git pull origin prod && cd backend && npm run build && pm2 restart xaker-backend && pm2 status xaker-backend || exit 1
         script_stop: true  # Остановка при ошибке
 
