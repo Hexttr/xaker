@@ -71,10 +71,19 @@ def simple_start_patch():
         print("\n3. Patching library...")
         lib_file = '/app/node_modules/@anthropic-ai/claude-agent-sdk/cli.js'
         
-        # Patch with sed
-        patch_cmd = f'docker exec {container_id} sh -c "sed -i \\"s/spawn(\\'node\\'/spawn(\\'\\/usr\\/bin\\/node\\'/g\\" {lib_file} && sed -i \\"s/spawn(\\\"node\\\"/spawn(\\\"\\/usr\\/bin\\/node\\\"/g\\" {lib_file} && sed -i \\"s/spawnSync(\\'node\\'/spawnSync(\\'\\/usr\\/bin\\/node\\'/g\\" {lib_file} && sed -i \\"s/spawnSync(\\\"node\\\"/spawnSync(\\\"\\/usr\\/bin\\/node\\\"/g\\" {lib_file}"'
+        # Patch with sed - execute commands separately
+        commands = [
+            f'sed -i "s/spawn(\'node\'/spawn(\'\\/usr\\/bin\\/node\'/g" {lib_file}',
+            f'sed -i \'s/spawn("node"/spawn("\\/usr\\/bin\\/node"/g\' {lib_file}',
+            f'sed -i "s/spawnSync(\'node\'/spawnSync(\'\\/usr\\/bin\\/node\'/g" {lib_file}',
+            f'sed -i \'s/spawnSync("node"/spawnSync("\\/usr\\/bin\\/node"/g\' {lib_file}',
+        ]
         
-        stdin, stdout, stderr = ssh.exec_command(patch_cmd)
+        for cmd in commands:
+            stdin, stdout, stderr = ssh.exec_command(f'docker exec {container_id} sh -c "{cmd}" 2>&1')
+            error = stderr.read().decode('utf-8', errors='replace')
+            if error and 'No such file' not in error:
+                print(f"   Warning: {error[:100]}")
         patch_output = stdout.read().decode('utf-8', errors='replace')
         patch_error = stderr.read().decode('utf-8', errors='replace')
         
