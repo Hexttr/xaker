@@ -5,6 +5,7 @@ import { spawn, ChildProcess } from 'child_process';
 import { join, resolve, normalize } from 'path';
 import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'fs';
 import fetch from 'node-fetch';
+import * as process from 'process';
 
 /**
  * Сервис для интеграции с Shannon
@@ -15,7 +16,7 @@ class ShannonService extends EventEmitter {
   // По умолчанию ищем в ../shannon относительно текущей директории
   private readonly SHANNON_PATH = process.env.SHANNON_PATH 
     ? resolve(process.env.SHANNON_PATH)
-    : resolve(process.cwd(), '../shannon');
+    : resolve(process.cwd ? process.cwd() : __dirname + '/../../..', '../shannon');
   private readonly SHANNON_DIST_PATH = join(this.SHANNON_PATH, 'dist', 'shannon.js');
   // Альтернативный путь напрямую к cli/ui.js
   private readonly SHANNON_CLI_PATH = join(this.SHANNON_PATH, 'dist', 'cli', 'ui.js');
@@ -43,7 +44,8 @@ class ShannonService extends EventEmitter {
       console.log(`[Shannon] SHANNON_PATH exists: ${shannonDirExists} (${this.SHANNON_PATH})`);
       console.log(`[Shannon] SHANNON_DIST_PATH exists: ${distPathExists}`);
       console.log(`[Shannon] SHANNON_CLI_PATH exists: ${cliPathExists}`);
-      console.log(`[Shannon] process.cwd(): ${process.cwd()}`);
+        const cwd = process.cwd ? process.cwd() : (__dirname + '/../../..');
+        console.log(`[Shannon] process.cwd(): ${cwd}`);
     }
     
     // Возвращаем true если хотя бы один путь существует
@@ -127,7 +129,8 @@ class ShannonService extends EventEmitter {
     // Ищем процессы temporal/client.js, которые могут быть связаны с этим пентестом
     try {
       const { execSync } = require('child_process');
-      const pentestDir = join(process.cwd(), 'pentests', pentestId);
+      const cwd = process.cwd ? process.cwd() : (__dirname + '/../../..');
+      const pentestDir = join(cwd, 'pentests', pentestId);
       
       // Ищем процессы, которые работают с этой директорией
       const processes = execSync(`ps aux | grep 'temporal/client' | grep '${pentestId}' | grep -v grep || true`, { encoding: 'utf-8' });
@@ -199,7 +202,8 @@ class ShannonService extends EventEmitter {
    */
   private isSelfScanPath(path: string): boolean {
     const normalizedPath = normalize(path).toLowerCase();
-    const projectRoot = normalize(process.cwd()).toLowerCase();
+    const cwd = process.cwd ? process.cwd() : (__dirname + '/../../..');
+    const projectRoot = normalize(cwd).toLowerCase();
     
     // Проверяем, не указывает ли путь на сам проект Xaker
     if (normalizedPath.includes(projectRoot)) {
@@ -297,7 +301,8 @@ class ShannonService extends EventEmitter {
     // Для работы Shannon нужен путь к репозиторию
     // ВАЖНО: Если не указан явный путь к исходному коду, используем изолированную папку
     // чтобы Shannon не анализировал код платформы Xaker
-    const pentestsDir = join(process.cwd(), 'pentests');
+    const cwd = process.cwd ? process.cwd() : (__dirname + '/../../..');
+    const pentestsDir = join(cwd, 'pentests');
     const pentestDir = join(pentestsDir, pentestId);
     let repoPath = pentestDir; // По умолчанию используем изолированную папку (только black-box)
     let useWhiteBox = false; // Флаг для white-box анализа
@@ -391,11 +396,12 @@ class ShannonService extends EventEmitter {
     } else if (existsSync(this.SHANNON_DIST_PATH)) {
       shannonEntryPoint = this.SHANNON_DIST_PATH;
     } else {
+      const cwd = process.cwd ? process.cwd() : (__dirname + '/../../..');
       throw new Error(`Shannon entry point not found. Checked paths:
         - ${this.SHANNON_MAIN_PATH}
         - ${this.SHANNON_CLI_PATH}
         - ${this.SHANNON_DIST_PATH}
-        Current working directory: ${process.cwd()}
+        Current working directory: ${cwd}
         Shannon path: ${this.SHANNON_PATH}`);
     }
     
@@ -459,7 +465,8 @@ class ShannonService extends EventEmitter {
     
     // Проверяем что рабочая директория существует
     if (!existsSync(this.SHANNON_PATH)) {
-      throw new Error(`Shannon directory not found: ${this.SHANNON_PATH}. Current working directory: ${process.cwd()}`);
+        const cwd = process.cwd ? process.cwd() : (__dirname + '/../../..');
+        throw new Error(`Shannon directory not found: ${this.SHANNON_PATH}. Current working directory: ${cwd}`);
     }
     
     pentestService.addLog(pentestId, 'info', `📂 Рабочая директория Shannon: ${this.SHANNON_PATH}`);
@@ -579,7 +586,8 @@ class ShannonService extends EventEmitter {
    * Сгенерировать отчет о недоступности цели
    */
   private async generateUnreachableReport(pentestId: string, config: Pentest['config']): Promise<void> {
-    const pentestDir = join(process.cwd(), 'pentests', pentestId);
+    const cwd = process.cwd ? process.cwd() : (__dirname + '/../../..');
+    const pentestDir = join(cwd, 'pentests', pentestId);
     const deliverablesDir = join(pentestDir, 'deliverables');
     
     if (!existsSync(deliverablesDir)) {
