@@ -21,21 +21,34 @@ jobs:
         port: ${{ secrets.SERVER_PORT }}
         script: |
           set -e
-          echo "🚀 Starting deployment..."
+          echo "=== Starting deployment ==="
           
-          echo "📥 [1/4] Pulling latest changes..."
-          cd /root/xaker || { echo "ERROR: /root/xaker not found"; exit 1; }
+          # Find project directory
+          if [ -d "/root/xaker" ]; then
+            PROJECT_DIR="/root/xaker"
+          elif [ -d "$HOME/xaker" ]; then
+            PROJECT_DIR="$HOME/xaker"
+          else
+            echo "ERROR: Project directory not found. Checking /root:"
+            ls -la /root/ | head -10
+            exit 1
+          fi
+          
+          echo "Using project directory: $PROJECT_DIR"
+          
+          echo "[1/4] Pulling latest changes..."
+          cd "$PROJECT_DIR"
           git pull origin prod
           
-          echo "🔨 [2/4] Building backend..."
-          cd backend || { echo "ERROR: backend directory not found"; exit 1; }
+          echo "[2/4] Building backend..."
+          cd "$PROJECT_DIR/backend"
           npm run build
           
-          echo "🔄 [3/4] Restarting backend..."
-          pm2 restart xaker-backend || (cd /root/xaker/backend && pm2 start npm --name xaker-backend -- run start)
+          echo "[3/4] Restarting backend..."
+          pm2 restart xaker-backend || (cd "$PROJECT_DIR/backend" && pm2 start npm --name xaker-backend -- run start)
           
-          echo "✅ [4/4] Checking status..."
+          echo "[4/4] Checking status..."
           pm2 status xaker-backend
           
-          echo "🎉 Deployment complete!"
+          echo "=== Deployment complete ==="
 
