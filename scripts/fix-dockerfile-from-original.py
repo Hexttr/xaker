@@ -4,6 +4,7 @@
 
 import paramiko
 import sys
+import time
 
 if sys.platform == 'win32':
     import io
@@ -91,11 +92,12 @@ def fix_from_original():
     # Rebuild
     print("\n4. Rebuilding worker image (this will take 2-3 minutes)...")
     stdin, stdout, stderr = ssh.exec_command('cd /opt/xaker/shannon && docker-compose stop worker && docker-compose rm -f worker')
-    time.sleep(2)
+    import time as time_module
+    time_module.sleep(2)
     
     stdin, stdout, stderr = ssh.exec_command('cd /opt/xaker/shannon && timeout 180 docker-compose build --no-cache worker 2>&1')
     # Wait for build
-    time.sleep(120)
+    time_module.sleep(120)
     build_output = stdout.read(100000).decode('utf-8', errors='replace')
     if 'Successfully' in build_output or 'Successfully tagged' in build_output:
         print("   ✅ Build successful")
@@ -107,8 +109,7 @@ def fix_from_original():
     start_output = stdout.read().decode('utf-8', errors='replace')
     print(start_output)
     
-    import time
-    time.sleep(5)
+    time_module.sleep(5)
     
     # Verify
     print("\n6. Verifying fix...")
@@ -128,6 +129,5 @@ def fix_from_original():
         print("⚠️  Some checks failed, but fix should work")
 
 if __name__ == "__main__":
-    import time
     fix_from_original()
 
