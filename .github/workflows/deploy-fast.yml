@@ -20,9 +20,9 @@ jobs:
         password: ${{ secrets.SERVER_PASSWORD }}
         port: ${{ secrets.SERVER_PORT }}
         script: |
-          PROJECT_DIR="/root/xaker"
-          [ ! -d "$PROJECT_DIR" ] && PROJECT_DIR="$HOME/xaker"
-          [ ! -d "$PROJECT_DIR" ] && { echo "ERROR: Project not found"; ls -la /root/; exit 1; }
-          cd "$PROJECT_DIR" && git pull origin prod && cd backend && npm run build && pm2 restart xaker-backend && pm2 status xaker-backend
+          PROJECT_DIR="/opt/xaker"
+          [ ! -d "$PROJECT_DIR" ] && PROJECT_DIR="/root/xaker"
+          [ ! -d "$PROJECT_DIR" ] && { echo "ERROR: Project not found"; exit 1; }
+          cd "$PROJECT_DIR" && git config pull.rebase false && git pull origin prod && cd backend && npm run build && pm2 delete xaker-backend 2>/dev/null; pm2 start npm --name xaker-backend -- run start && pm2 status xaker-backend
         script_stop: true  # Остановка при ошибке
 

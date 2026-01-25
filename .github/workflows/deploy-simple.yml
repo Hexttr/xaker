@@ -91,14 +91,18 @@ jobs:
           echo "Current dir: $(pwd)"
           echo ""
           echo "=== Git pull ==="
+          git config pull.rebase false
           git pull origin prod
           echo ""
           echo "=== Build ==="
           cd backend
           npm run build
           echo ""
+          echo "=== Cleaning PM2 ==="
+          pm2 delete xaker-backend 2>/dev/null || true
+          
           echo "=== Restart ==="
-          pm2 restart xaker-backend || pm2 start npm --name xaker-backend -- run start
+          pm2 start npm --name xaker-backend -- run start
           echo ""
           echo "=== Status ==="
           pm2 status xaker-backend

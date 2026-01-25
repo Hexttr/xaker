@@ -23,45 +23,39 @@ jobs:
           set -e
           echo "=== Starting deployment ==="
           
-          # Find project directory - search in multiple locations
-          PROJECT_DIR=""
+          # Project directory - found via previous runs
+          PROJECT_DIR="/opt/xaker"
           
-          # Try common locations
-          for path in "/root/xaker" "$HOME/xaker" "/opt/xaker" "/var/www/xaker"; do
-            if [ -d "$path" ]; then
-              PROJECT_DIR="$path"
-              break
-            fi
-          done
-          
-          # If not found, search for xaker directory
-          if [ -z "$PROJECT_DIR" ]; then
-            FOUND=$(find /root /opt /var/www /home -maxdepth 3 -type d -name "xaker" 2>/dev/null | head -1)
+          if [ ! -d "$PROJECT_DIR" ]; then
+            echo "ERROR: Project directory not found at $PROJECT_DIR"
+            echo "Searching..."
+            FOUND=$(find /opt /root /var/www /home -maxdepth 3 -type d -name "xaker" 2>/dev/null | head -1)
             if [ -n "$FOUND" ]; then
               PROJECT_DIR="$FOUND"
+              echo "Found: $PROJECT_DIR"
+            else
+              echo "ERROR: Project directory not found"
+              exit 1
             fi
-          fi
-          
-          if [ -z "$PROJECT_DIR" ]; then
-            echo "ERROR: Project directory not found"
-            echo "Searched in: /root, $HOME, /opt, /var/www"
-            echo "Checking /root:"
-            ls -la /root/ | head -10
-            exit 1
           fi
           
           echo "Using project directory: $PROJECT_DIR"
           
           echo "[1/4] Pulling latest changes..."
           cd "$PROJECT_DIR"
+          git config pull.rebase false
           git pull origin prod
           
           echo "[2/4] Building backend..."
           cd "$PROJECT_DIR/backend"
           npm run build
           
+          echo "[3/4] Cleaning up duplicate PM2 processes..."
+          pm2 delete xaker-backend 2>/dev/null || true
+          
           echo "[3/4] Restarting backend..."
-          pm2 restart xaker-backend || (cd "$PROJECT_DIR/backend" && pm2 start npm --name xaker-backend -- run start)
+          cd "$PROJECT_DIR/backend"
+          pm2 start npm --name xaker-backend -- run start
           
           echo "[4/4] Checking status..."
           pm2 status xaker-backend
